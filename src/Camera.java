@@ -9,7 +9,7 @@ public class Camera extends Base {
 	public Vector offset;
 	private float zoom = 5;
 	private float zoomMin = 1.0f;
-	private float zoomMax = 100.0f;
+	private float zoomMax = 1000.0f;
 	private Mode mode;
 	private float aspect;
 	private float fovy;
@@ -87,7 +87,7 @@ public class Camera extends Base {
 	public void setUpCameraLook(GL2 gl) {
 		gl.glMatrixMode(GL2.GL_PROJECTION);
 		gl.glLoadIdentity();
-		gl.glFrustumf(-realFOV, realFOV, -realFOV*aspect, realFOV*aspect, 1, 1000);
+		gl.glFrustumf(-realFOV, realFOV, -realFOV*aspect, realFOV*aspect, 1, 10000);
 		switch (mode) {
 		case FREELOOK:
 			gl.glRotatef(pitch, 1, 0, 0);
@@ -113,5 +113,8 @@ public class Camera extends Base {
 	}
 	public float getAspect() {
 		return aspect;
+	}
+	public Mode getMode() {
+		return mode;
 	}
 }

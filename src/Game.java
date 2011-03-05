@@ -11,38 +11,30 @@ public class Game {
 	private GL2 gl;
 	//private GLUgl2 glu;
 	private Input input;
-	private ArrayList<Sphere> spheres = new ArrayList<Sphere>();
 	private Camera camera;
 	private Sphere me;
-	private int index =0;
-	private float[][] track = new float[5000][];
 	private float mouseWheelLengthPerClick = 1;
 	private Random random = new Random(16163);
+	private GravitySystem system = new GravitySystem();
 
 	public Game (GL2 gl, GLUgl2 glu, Input input) {
 		this.gl = gl;
 		//this.glu = glu;
 		this.input = input;
-		System.out.println(r(-10,10));
-		spheres.add(new Sphere(new Vector(0,0,-5), 1, 21, 20));
-		spheres.add(new Sphere(new Vector(0,2,0), 1, 11, 10));
-		spheres.add(new Sphere(new Vector(4,5,-4), 1, 31, 30));
-		for (int i=0; i<2; i++)
-			spheres.add(new Sphere(new Vector(r(-50,50)-50,r(0,50),r(-50,50)), 2, 10, 10));
-		spheres.get(2).speed = new Vector(0,1,0-.01f);
-		spheres.add(new Sphere(new Vector(-2,0,0), 1, 31, 30));
-		for (Sphere sphere : spheres)
-			sphere.setAffectedByGravity(true);
+		for (int i=0; i<1; i++)
+			system.add(new Sphere(new Vector(r(-50,50)-50,r(0,50),r(-50,50)), 1, 10, 10));
+		for (Sphere sphere : system) {
+			sphere.setAffectedByGravity(false);
+			sphere.enableTrack(new float[]{r(0,1),r(0,1),r(0,1)}, 5000);
+		}
 		
 		me = new Sphere(new Vector(0,0,0), 1, 20, 20);
-		me.speed = new Vector (0,0,0);
+		me.speed = new Vector (0,1,0);
+		me.enableTrack(new float[]{1,0,0}, 5000);
 		
 		camera = new Camera(new Vector(0,0,0));
 		camera.setTarget(me);
 		camera.setFOV(90);
-		
-		for (int i=0; i<track.length; i++)
-			track[i] = new float[3];
 	}
 	public float r(float min, float max) {
 		return random.nextFloat()*(max-min)+min;
@@ -50,20 +42,11 @@ public class Game {
 	public void tick() {
 		parseInput();
 		
-		//if (input.inFocus())
-		//	robot.mouseMove(mouseCenter.x, mouseCenter.y);
-		
-		int totalSpheres = spheres.size();
-		for (int i=0; i<totalSpheres; i++){
-			Sphere sphere = spheres.get(i);
-			//for (int j=i; j<totalSpheres; j++)
-				sphere.attract(me);//spheres.get(j));
+		system.gravitate();
+		for (Sphere sphere : system)
 			sphere.move();
-			if (sphere.pos.y-sphere.getRadius() < 0) {
-				sphere.pos.y = sphere.getRadius();
-				sphere.speed.y = -sphere.speed.y;
-			}
-		}
+		system.collide();
+		
 		me.move();
 		camera.move();
 		
@@ -76,25 +59,9 @@ public class Game {
 		gl.glMatrixMode(GL2.GL_MODELVIEW);
 		gl.glLoadIdentity();
 		
-		for (Model model : spheres)
+		for (Model model : system)
 			model.render(gl, 1);
 		me.render(gl, 2);
-		
-		gl.glLoadIdentity();
-		gl.glColor3f(1.0f, 0, 0);
-		gl.glBegin(GL2.GL_LINE_STRIP);
-		for (int i=index+1; i<track.length; i++)
-			gl.glVertex3fv(track[i], 0);
-		for (int i=0; i<index; i++)
-			gl.glVertex3fv(track[i], 0);
-		gl.glEnd();
-
-		gl.glFlush();
-		
-		track[index][0] = me.pos.x;
-		track[index][1] = me.pos.y;
-		track[index++][2] = me.pos.z;
-		index %= track.length;
 	}
 
 	private void drawAxes() {
@@ -116,19 +83,41 @@ public class Game {
 		gl.glEnd();
 	}
 	private void parseInput() {
-		float change = 0.01f;
-		if (input.keyPressed(Input.forward))
-			me.speed.addSelf(new Vector(0,0,-change));
-		if (input.keyPressed(Input.backward))
-			me.speed.addSelf(new Vector(0,0,change));
-		if (input.keyPressed(Input.strafeR))
-			me.speed.addSelf(new Vector(change,0,0));
-		if (input.keyPressed(Input.strafeL))
-			me.speed.addSelf(new Vector(-change,0,0));
-		if (input.keyPressed(Input.up))
-			me.speed.addSelf(new Vector(0,change,0));
-		if (input.keyPressed(Input.down))
-			me.speed.addSelf(new Vector(0,-change,0));
+		float change = 0.1f;
+		if (input.keyPressed(KeyEvent.VK_T)) {
+			if (camera.getMode() == Camera.Mode.TARGET)
+				camera.setMode(Camera.Mode.FREELOOK);
+			else
+				camera.setMode(Camera.Mode.TARGET);
+		}
+		if (camera.getMode() == Camera.Mode.TARGET) {
+			if (input.keyPressed(Input.forward))
+				camera.pos.addSelf(new Vector(0,0,-change));
+			if (input.keyPressed(Input.backward))
+				camera.pos.addSelf(new Vector(0,0,change));
+			if (input.keyPressed(Input.strafeR))
+				camera.pos.addSelf(new Vector(change,0,0));
+			if (input.keyPressed(Input.strafeL))
+				camera.pos.addSelf(new Vector(-change,0,0));
+			if (input.keyPressed(Input.up))
+				camera.pos.addSelf(new Vector(0,change,0));
+			if (input.keyPressed(Input.down))
+				camera.pos.addSelf(new Vector(0,-change,0));
+		}
+		else {
+			if (input.keyPressed(Input.forward))
+				me.speed.addSelf(new Vector(0,0,-change));
+			if (input.keyPressed(Input.backward))
+				me.speed.addSelf(new Vector(0,0,change));
+			if (input.keyPressed(Input.strafeR))
+				me.speed.addSelf(new Vector(change,0,0));
+			if (input.keyPressed(Input.strafeL))
+				me.speed.addSelf(new Vector(-change,0,0));
+			if (input.keyPressed(Input.up))
+				me.speed.addSelf(new Vector(0,change,0));
+			if (input.keyPressed(Input.down))
+				me.speed.addSelf(new Vector(0,-change,0));
+		}
 		if (input.keyPressed(KeyEvent.VK_CONTROL))
 			me.speed = new Vector(0,0,0);
 		if (input.keyPressed(KeyEvent.VK_I))

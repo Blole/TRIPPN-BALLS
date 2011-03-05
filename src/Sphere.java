@@ -1,7 +1,13 @@
 import javax.media.opengl.GL2;
 
 public class Sphere extends Model {
+	private float[][] track;
+	private boolean enableTrack = false;
 	private float radius;
+	private float[] trackColor;
+	private int trackIndex;
+	public float mass;
+	public boolean markedForRemoval = false;
 	
 	public Sphere(Vector pos) {
 		this(pos, 1, 20, 20);
@@ -16,6 +22,20 @@ public class Sphere extends Model {
 		this.setRadius(radius);
 		createPolygons(longitude, latitude);
 		speed = new Vector(0,0,.001f);
+	}
+	
+	public void enableTrack(float[] color, int length) {
+		if (color != null) {
+			trackColor = color;
+			track = new float[length][];
+			for (int i=0; i<track.length; i++)
+				track[i] = new float[3];
+			enableTrack = true;
+		}
+		else {
+			enableTrack = false;
+			track = null;
+		}
 	}
 	
 	@Override
@@ -38,6 +58,24 @@ public class Sphere extends Model {
 			}
 		}
 		gl.glEnd();
+		if (enableTrack) {
+			gl.glLoadIdentity();
+			gl.glColor3f(trackColor[0], trackColor[1], trackColor[2]);
+			gl.glBegin(GL2.GL_LINE_STRIP);
+			for (int i=trackIndex+1; i<track.length; i++)
+				gl.glVertex3fv(track[i], 0);
+			for (int i=0; i<trackIndex; i++)
+				gl.glVertex3fv(track[i], 0);
+			gl.glEnd();
+
+			gl.glFlush();
+			
+			track[trackIndex][0] = pos.x;
+			track[trackIndex][1] = pos.y;
+			track[trackIndex][2] = pos.z;
+			trackIndex++;
+			trackIndex %= track.length;
+		}
 		gl.glPopMatrix();
 	}
 
@@ -93,5 +131,11 @@ public class Sphere extends Model {
 		other.speed.x -= xDiff*attraction;
 		other.speed.y -= yDiff*attraction;
 		other.speed.z -= zDiff*attraction;
+	}
+
+	public void collisionDetect(Sphere other) {
+		if (pos.distanceTo(other.pos) < (radius+other.radius)) {
+			
+		}
 	}
 }
