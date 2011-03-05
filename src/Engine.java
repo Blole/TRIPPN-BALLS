@@ -77,6 +77,7 @@ public class Engine implements GLEventListener {
 
 	@Override
 	public void reshape(GLAutoDrawable drawable, int topY, int topX, int width, int height) {
+		System.out.println(game);
 		game.reshape(topX, topY, width, height);
 	}
 

@@ -7,7 +7,7 @@ public class Camera extends Base {
 	private float mouseSensitivity = 5.0f;
 	public Model target;
 	public Vector offset;
-	private float zoom = 5;
+	private float zoom = 100;
 	private float zoomMin = 1.0f;
 	private float zoomMax = 1000.0f;
 	private Mode mode;

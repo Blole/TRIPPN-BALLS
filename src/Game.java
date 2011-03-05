@@ -21,16 +21,17 @@ public class Game {
 		this.gl = gl;
 		//this.glu = glu;
 		this.input = input;
-		for (int i=0; i<1; i++)
+		for (int i=0; i<2; i++)
 			system.add(new Sphere(new Vector(r(-50,50)-50,r(0,50),r(-50,50)), 1, 10, 10));
 		for (Sphere sphere : system) {
-			sphere.setAffectedByGravity(false);
+			sphere.setAffectedByGravity(true);
 			sphere.enableTrack(new float[]{r(0,1),r(0,1),r(0,1)}, 5000);
 		}
-		
 		me = new Sphere(new Vector(0,0,0), 1, 20, 20);
 		me.speed = new Vector (0,1,0);
+		me.setAffectedByGravity(true);
 		me.enableTrack(new float[]{1,0,0}, 5000);
+		system.add(me);
 		
 		camera = new Camera(new Vector(0,0,0));
 		camera.setTarget(me);
@@ -47,7 +48,6 @@ public class Game {
 			sphere.move();
 		system.collide();
 		
-		me.move();
 		camera.move();
 		
 		gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
@@ -90,21 +90,8 @@ public class Game {
 			else
 				camera.setMode(Camera.Mode.TARGET);
 		}
-		if (camera.getMode() == Camera.Mode.TARGET) {
-			if (input.keyPressed(Input.forward))
-				camera.pos.addSelf(new Vector(0,0,-change));
-			if (input.keyPressed(Input.backward))
-				camera.pos.addSelf(new Vector(0,0,change));
-			if (input.keyPressed(Input.strafeR))
-				camera.pos.addSelf(new Vector(change,0,0));
-			if (input.keyPressed(Input.strafeL))
-				camera.pos.addSelf(new Vector(-change,0,0));
-			if (input.keyPressed(Input.up))
-				camera.pos.addSelf(new Vector(0,change,0));
-			if (input.keyPressed(Input.down))
-				camera.pos.addSelf(new Vector(0,-change,0));
-		}
-		else {
+		switch (camera.getMode()) {
+		case TARGET:
 			if (input.keyPressed(Input.forward))
 				me.speed.addSelf(new Vector(0,0,-change));
 			if (input.keyPressed(Input.backward))
@@ -117,6 +104,21 @@ public class Game {
 				me.speed.addSelf(new Vector(0,change,0));
 			if (input.keyPressed(Input.down))
 				me.speed.addSelf(new Vector(0,-change,0));
+			break;
+		case FREELOOK:
+			if (input.keyPressed(Input.forward))
+				camera.pos.addSelf(new Vector(0,0,-change));
+			if (input.keyPressed(Input.backward))
+				camera.pos.addSelf(new Vector(0,0,change));
+			if (input.keyPressed(Input.strafeR))
+				camera.pos.addSelf(new Vector(change,0,0));
+			if (input.keyPressed(Input.strafeL))
+				camera.pos.addSelf(new Vector(-change,0,0));
+			if (input.keyPressed(Input.up))
+				camera.pos.addSelf(new Vector(0,change,0));
+			if (input.keyPressed(Input.down))
+				camera.pos.addSelf(new Vector(0,-change,0));
+			break;
 		}
 		if (input.keyPressed(KeyEvent.VK_CONTROL))
 			me.speed = new Vector(0,0,0);

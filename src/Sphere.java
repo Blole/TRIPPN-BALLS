@@ -21,7 +21,7 @@ public class Sphere extends Model {
 		super(pos, pitch, yaw, roll);
 		this.setRadius(radius);
 		createPolygons(longitude, latitude);
-		speed = new Vector(0,0,.001f);
+		speed = new Vector(0,0,0);
 	}
 	
 	public void enableTrack(float[] color, int length) {
