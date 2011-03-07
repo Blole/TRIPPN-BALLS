@@ -6,6 +6,10 @@ import java.util.Random;
 import javax.media.opengl.GL2;
 import javax.media.opengl.glu.gl2.GLUgl2;
 
+import models.*;
+
+import attachables.*;
+
 
 public class Game {
 	private GL2 gl;
@@ -22,7 +26,6 @@ public class Game {
 		this.input = input;
 		Settings.loadSettings();
 		
-		spheres.add(new Sphere(new Vector(0,3,0), 1, 10, 10));
 		for (int i=0; i<0; i++)
 			spheres.add(new Sphere(new Vector(r(-50,50),0,r(-50,50)), 1, 10, 10));
 		for (Sphere sphere : spheres) {
@@ -32,6 +35,12 @@ public class Game {
 		me = new Sphere(new Vector(0,0,0), 1, 20, 20);
 		me.setAffectedByGravity(true);
 		me.enableTrack(new float[]{1,0,0}, 5000);
+		me.attach(new Pyramid(  0,  0, 1));
+		me.attach(new Pyramid(  0, 90,-1));
+		me.attach(new Pyramid( 90, 90, 1));
+		me.attach(new Pyramid(180, 90,-1));
+		me.attach(new Pyramid(270, 90, 1));
+		me.attach(new Pyramid(  0,180, 1));
 		spheres.add(me);
 		
 		camera = new Camera(new Vector(0,0,0));
@@ -46,11 +55,11 @@ public class Game {
 		
 		for (int i=0; i<spheres.size()-1; i++) {
 			Sphere mark = spheres.get(i);
-			if (!mark.affectedByGravity)
+			if (!mark.affectedByGravity())
 				continue;
 			for (int j=i+1; j<spheres.size(); j++) {
 				Sphere runner = spheres.get(j);
-				if (!runner.affectedByGravity)
+				if (!runner.affectedByGravity())
 					continue;
 				mark.attract(runner);
 			}
@@ -156,8 +165,21 @@ public class Game {
 			sphere.enableTrack(new float[]{r(0,1),r(0,1),r(0,1)}, 500);
 			spheres.add(sphere);
 		}
+		if (input.keyPressed(KeyEvent.VK_M)) {
+			Sphere sphere = new Sphere(me.pos.add(new Vector(0,0,me.getRadius()+10)), 1, 10, 10);
+			sphere.setAffectedByGravity(true);
+			sphere.enableTrack(new float[]{r(0,1),r(0,1),r(0,1)}, 500);
+			spheres.add(sphere);
+		}
+		if (input.keyPressed(KeyEvent.VK_R)) {
+			spheres = new ArrayList<Sphere>();
+			spheres.add(me);
+			me.speed = new Vector(0,0,0);
+			me.pos = new Vector(0,0,0);
+			me.clearTrack();
+		}
 		if (input.keyPressed(KeyEvent.VK_G))
-			me.setAffectedByGravity(!me.affectedByGravity);
+			me.setAffectedByGravity(!me.affectedByGravity());
 		if (input.keyPressed(KeyEvent.VK_UP)) {
 			camera.setFOV(camera.getFOV()+3);
 			System.out.printf("FOV set to: %3f degrees\n", camera.getFOV());

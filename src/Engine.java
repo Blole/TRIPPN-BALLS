@@ -1,11 +1,13 @@
 import java.awt.Frame;
 import java.awt.GraphicsEnvironment;
 
-import javax.media.opengl.*;
+import javax.media.opengl.GL2;
+import javax.media.opengl.GLAutoDrawable;
+import javax.media.opengl.GLEventListener;
 import javax.media.opengl.awt.GLCanvas;
 import javax.media.opengl.glu.gl2.GLUgl2;
 
-import com.jogamp.opengl.util.*;
+import com.jogamp.opengl.util.FPSAnimator;
 
 public class Engine implements GLEventListener {
 	private static final long serialVersionUID = 1L;
@@ -77,7 +79,6 @@ public class Engine implements GLEventListener {
 
 	@Override
 	public void reshape(GLAutoDrawable drawable, int topY, int topX, int width, int height) {
-		System.out.println(game);
 		game.reshape(topX, topY, width, height);
 	}
 

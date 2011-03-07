@@ -6,8 +6,8 @@ import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
 public class Settings {
-	private static final String settingsFileName = "settings.ini";
-	private static final String constantsFileName = "constants.ini";
+	private static final String settingsFileName = "src/settings.ini";
+	private static final String constantsFileName = "src/constants.ini";
 	private static final String keyBindSection = "KeyBinds";
 	private static final String mouseSection = "Mouse";
 	private static final String cameraSection = "Camera";

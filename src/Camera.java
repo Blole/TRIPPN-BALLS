@@ -2,8 +2,13 @@ import java.awt.Point;
 
 import javax.media.opengl.GL2;
 
+import models.*;
 
-public class Camera extends Base {
+
+public class Camera {
+	public float pitch;
+	public float yaw;
+	public float roll;
 	public Model target;
 	public Vector offset;
 	private float zoom;
@@ -11,6 +16,8 @@ public class Camera extends Base {
 	private float aspect;
 	private float fovy;
 	private float realFOV;
+	public Vector pos;
+	
 	public static enum Mode {
 		FREELOOK, LOCKED_FOLLOW, TARGET
 	}
@@ -19,7 +26,10 @@ public class Camera extends Base {
 		this(pos, 20, 5, 0);
 	}
 	public Camera(Vector pos, float pitch, float yaw, float roll) {
-		super(pos, pitch, yaw, roll);
+		this.pos = pos;
+		this.pitch = pitch;
+		this.yaw = yaw;
+		this.roll = roll;
 		mode = Mode.FREELOOK;
 		offset = new Vector(-3,2,6);
 		zoom = Settings.zoomInit;
@@ -35,7 +45,7 @@ public class Camera extends Base {
 			break;
 		case LOCKED_FOLLOW:
 			Vector up;
-			if (target.getAffectedByGravity())
+			if (target.affectedByGravity())
 				up = target.getGravity().setLength(-2);
 			else
 				up = new Vector(0,1,0);
