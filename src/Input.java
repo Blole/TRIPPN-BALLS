@@ -25,17 +25,9 @@ public class Input implements KeyListener, MouseListener, MouseWheelListener, Fo
 	private boolean focusGained;
 	private boolean focusLost;
 	private int wheelRotation = 0;
-	public Point mouseCenter;
+	private Point mouseCenter;
 	private Point mousePosBeforeCentering;
-	
-	public static Cursor noCursor = Toolkit.getDefaultToolkit().createCustomCursor(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB), new java.awt.Point(0,0), "none");
-	public static int forward	= KeyEvent.VK_W;
-	public static int backward	= KeyEvent.VK_S;
-	public static int strafeL	= KeyEvent.VK_A;
-	public static int strafeR	= KeyEvent.VK_D;
-	public static int up		= KeyEvent.VK_SPACE;
-	public static int down		= KeyEvent.VK_SHIFT;
-	public static int menu 		= KeyEvent.VK_ESCAPE;
+	private static Cursor noCursor = Toolkit.getDefaultToolkit().createCustomCursor(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB), new java.awt.Point(0,0), "none");
 	
 	public Input() {
 		Robot r=null;
@@ -153,6 +145,9 @@ public class Input implements KeyListener, MouseListener, MouseWheelListener, Fo
 		int rotation = wheelRotation;
 		wheelRotation = 0;
 		return rotation;
+	}
+	public void setMouseCenter(Point mouseCenter) {
+		this.mouseCenter = mouseCenter;
 	}
 	public void hideCursor(boolean hide) {
 		if (hide)

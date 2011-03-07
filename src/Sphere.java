@@ -12,16 +12,15 @@ public class Sphere extends Model {
 	public Sphere(Vector pos) {
 		this(pos, 1, 20, 20);
 	}
-	
 	public Sphere(Vector pos, float radius, int longitude, int latitude) {
 		this(pos, 0, 0, 0, radius, longitude, latitude);
 	}
-	
 	public Sphere(Vector pos, float pitch, float yaw, float roll, float radius, int longitude, int latitude) {
 		super(pos, pitch, yaw, roll);
 		this.setRadius(radius);
 		createPolygons(longitude, latitude);
 		speed = new Vector(0,0,0);
+		mass = radius;
 	}
 	
 	public void enableTrack(float[] color, int length) {
@@ -29,7 +28,7 @@ public class Sphere extends Model {
 			trackColor = color;
 			track = new float[length][];
 			for (int i=0; i<track.length; i++)
-				track[i] = new float[3];
+				track[i] = new float[]{pos.x, pos.y, pos.z};
 			enableTrack = true;
 		}
 		else {
@@ -37,7 +36,10 @@ public class Sphere extends Model {
 			track = null;
 		}
 	}
-	
+	public void clearTrack() {
+		for (int i=track.length; i-->0;)
+			track[i] = new float[]{pos.x, pos.y, pos.z};
+	}
 	@Override
 	public void move() {
 		if (affectedByGravity)
@@ -70,11 +72,13 @@ public class Sphere extends Model {
 
 			gl.glFlush();
 			
-			track[trackIndex][0] = pos.x;
-			track[trackIndex][1] = pos.y;
-			track[trackIndex][2] = pos.z;
-			trackIndex++;
-			trackIndex %= track.length;
+			if (speed.abs()!=0) {
+				track[trackIndex][0] = pos.x;
+				track[trackIndex][1] = pos.y;
+				track[trackIndex][2] = pos.z;
+				trackIndex++;
+				trackIndex %= track.length;
+			}
 		}
 		gl.glPopMatrix();
 	}
@@ -113,29 +117,42 @@ public class Sphere extends Model {
 	public void setRadius(float radius) {
 		this.radius = radius;
 	}
-
 	public float getRadius() {
 		return radius;
 	}
 
 	public void attract(Sphere other) {
-		float xDiff = other.pos.x-pos.x;
-		float yDiff = other.pos.y-pos.y;
-		float zDiff = other.pos.z-pos.z;
-		float distance = pos.distanceTo(other.pos);
-		float attraction = 1f/(distance*distance-1);
-		
-		speed.x += xDiff*attraction;
-		speed.y += yDiff*attraction;
-		speed.z += zDiff*attraction;
-		other.speed.x -= xDiff*attraction;
-		other.speed.y -= yDiff*attraction;
-		other.speed.z -= zDiff*attraction;
+		Vector vectorBetween = pos.vectorTo(other.pos);
+		if (vectorBetween.abs() >= (radius+other.radius)) {
+			float xDiff = other.pos.x-pos.x;
+			float yDiff = other.pos.y-pos.y;
+			float zDiff = other.pos.z-pos.z;
+			float distance = pos.distanceTo(other.pos);
+			float attraction = 1f/(distance*distance);
+			
+			speed.x += xDiff*attraction;
+			speed.y += yDiff*attraction;
+			speed.z += zDiff*attraction;
+			other.speed.x -= xDiff*attraction;
+			other.speed.y -= yDiff*attraction;
+			other.speed.z -= zDiff*attraction;
+		}
 	}
 
-	public void collisionDetect(Sphere other) {
-		if (pos.distanceTo(other.pos) < (radius+other.radius)) {
+	public void checkForCollision(Sphere o) {
+		Vector vectorBetween = pos.vectorTo(o.pos);
+		if (vectorBetween.abs() < (radius+o.radius)) {
+			Vector toOther = speed.multiply(mass).proj(vectorBetween);
+			Vector toMe = o.speed.multiply(o.mass).proj(vectorBetween);
 			
+			speed.addSelf(toMe);
+			o.speed.subtractSelf(toMe);
+			o.speed.addSelf(toOther);
+			speed.subtractSelf(toOther);
 		}
+	}
+	
+	public String toString() {
+		return "Sphere pos:"+pos+" speed:"+speed;
 	}
 }

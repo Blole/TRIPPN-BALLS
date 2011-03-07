@@ -9,16 +9,21 @@ public class Vector {
 		this.z = z;
 	}
 	
-	public Vector add(Vector p) {
-		return new Vector(x+p.x, y+p.y, z+p.z);
+	public Vector add(Vector v) {
+		return new Vector(x+v.x, y+v.y, z+v.z);
 	}
-	public void addSelf(Vector p) {
-		x += p.x;
-		y += p.y;
-		z += p.z;
+	public void addSelf(Vector v) {
+		x += v.x;
+		y += v.y;
+		z += v.z;
 	}
-	public Vector subtract(Vector p) {
-		return new Vector(x-p.x, y-p.y, z-p.z);
+	public Vector subtract(Vector v) {
+		return new Vector(x-v.x, y-v.y, z-v.z);
+	}
+	public void subtractSelf(Vector v) {
+		x -= v.x;
+		y -= v.y;
+		z -= v.z;
 	}
 	
 	public float abs() {

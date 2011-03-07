@@ -4,12 +4,9 @@ import javax.media.opengl.GL2;
 
 
 public class Camera extends Base {
-	private float mouseSensitivity = 5.0f;
 	public Model target;
 	public Vector offset;
-	private float zoom = 100;
-	private float zoomMin = 1.0f;
-	private float zoomMax = 1000.0f;
+	private float zoom;
 	private Mode mode;
 	private float aspect;
 	private float fovy;
@@ -25,6 +22,7 @@ public class Camera extends Base {
 		super(pos, pitch, yaw, roll);
 		mode = Mode.FREELOOK;
 		offset = new Vector(-3,2,6);
+		zoom = Settings.zoomInit;
 	}
 	
 	public void setPitch(float pitch) {
@@ -70,8 +68,8 @@ public class Camera extends Base {
 		return fovy;
 	}
 	public void updateTurn(Point mouseMovement) {
-		yaw	  -= mouseMovement.x/mouseSensitivity;
-		pitch -= mouseMovement.y/mouseSensitivity;
+		yaw	  -= (float)mouseMovement.x*Settings.mouseSense;
+		pitch -= (float)mouseMovement.y*Settings.mouseSense;
 		if (pitch > 90)
 			pitch = 90;
 		else if (pitch < -90)
@@ -79,10 +77,10 @@ public class Camera extends Base {
 	}
 	public void zoom(float rotation) {
 		zoom += rotation;
-		if (zoom < zoomMin)
-			zoom = zoomMin;
-		else if (zoom > zoomMax)
-			zoom = zoomMax;
+		if (zoom < Settings.zoomMin)
+			zoom = Settings.zoomMin;
+		else if (zoom > Settings.zoomMax)
+			zoom = Settings.zoomMax;
 	}
 	public void setUpCameraLook(GL2 gl) {
 		gl.glMatrixMode(GL2.GL_PROJECTION);
