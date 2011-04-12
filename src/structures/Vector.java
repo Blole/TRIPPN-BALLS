@@ -1,4 +1,4 @@
-package models;
+package structures;
 public class Vector {
 	public float x;
 	public float y;
@@ -96,6 +96,10 @@ public class Vector {
 
 	public boolean isMultiple(Vector v) {
 		return unit().equals(v.unit());
+	}
+	
+	public boolean isNull() {
+		return x==0 && y==0 && z==0;
 	}
 	
 	public String toString() {

@@ -1,15 +1,18 @@
+package engine;
 import java.awt.Point;
 
 import javax.media.opengl.GL2;
 
-import models.*;
+import models.Sphere;
+
+import structures.Vector;
 
 
 public class Camera {
 	public float pitch;
 	public float yaw;
 	public float roll;
-	public Model target;
+	public Sphere target;
 	public Vector offset;
 	private float zoom;
 	private Mode mode;
@@ -44,20 +47,20 @@ public class Camera {
 		case FREELOOK:
 			break;
 		case LOCKED_FOLLOW:
-			Vector up;
-			if (target.affectedByGravity())
+			/*Vector up;
+			if (target.isAffectedByGravity())
 				up = target.getGravity().setLength(-2);
 			else
 				up = new Vector(0,1,0);
 			Vector current = target.pos.vectorTo(pos);
-			pos = target.pos.add(up).add(current.subtract(current.proj(up)).shortenIfLonger(5));
+			pos = target.pos.add(up).add(current.subtract(current.proj(up)).shortenIfLonger(5));*/
 			break;
 		case TARGET:
 			break;
 		}
 	}
-	public void setTarget(Model target) {
-	    this.target = target;
+	public void setTarget(Sphere me) {
+	    this.target = me;
 	    mode = Mode.TARGET;
 	}
 	public void setMode(Mode mode) {
@@ -92,21 +95,21 @@ public class Camera {
 		else if (zoom > Settings.zoomMax)
 			zoom = Settings.zoomMax;
 	}
-	public void setUpCameraLook(GL2 gl) {
-		gl.glMatrixMode(GL2.GL_PROJECTION);
-		gl.glLoadIdentity();
-		gl.glFrustumf(-realFOV, realFOV, -realFOV*aspect, realFOV*aspect, 1, 10000);
+	public void setUpCameraLook() {
+		Engine.gl.glMatrixMode(GL2.GL_PROJECTION);
+		Engine.gl.glLoadIdentity();
+		Engine.gl.glFrustumf(-realFOV, realFOV, -realFOV*aspect, realFOV*aspect, 1, 10000);
 		switch (mode) {
 		case FREELOOK:
-			gl.glRotatef(pitch, 1, 0, 0);
-			gl.glRotatef(yaw, 0, 1, 0);
-			gl.glTranslatef(-pos.x, -pos.y, -pos.z);
+			Engine.gl.glRotatef(pitch, 1, 0, 0);
+			Engine.gl.glRotatef(yaw, 0, 1, 0);
+			Engine.gl.glTranslatef(-pos.x, -pos.y, -pos.z);
 			break;
 		case TARGET:
-			gl.glTranslatef(0, 0, -zoom);
-			gl.glRotatef(pitch, 1, 0, 0);
-			gl.glRotatef(yaw, 0, 1, 0);
-			gl.glTranslatef(-target.pos.x, -target.pos.y, -target.pos.z);
+			Engine.gl.glTranslatef(0, 0, -zoom);
+			Engine.gl.glRotatef(pitch, 1, 0, 0);
+			Engine.gl.glRotatef(yaw, 0, 1, 0);
+			Engine.gl.glTranslatef(-target.getPos().x, -target.getPos().y, -target.getPos().z);
 			break;
 		}
 	}

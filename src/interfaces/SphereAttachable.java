@@ -1,13 +1,11 @@
-package attachables;
-import javax.media.opengl.GL2;
+package interfaces;
 
 import models.Sphere;
 
 public interface SphereAttachable {
 	public void sayHello(Sphere parent);
 	public void move();
-	public void render(GL2 gl);
+	public void render();
 	public boolean markedForRemoval();
-	public float initialRotation();
 	public void setScale(float scale);
 }

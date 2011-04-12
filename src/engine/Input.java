@@ -1,3 +1,4 @@
+package engine;
 import java.awt.AWTException;
 import java.awt.Cursor;
 import java.awt.MouseInfo;
@@ -30,23 +31,21 @@ public class Input implements KeyListener, MouseListener, MouseWheelListener, Fo
 	private static Cursor noCursor = Toolkit.getDefaultToolkit().createCustomCursor(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB), new java.awt.Point(0,0), "none");
 	
 	public Input() {
-		Robot r=null;
-		try{
-		r=new Robot();
-		}catch(final AWTException e){System.out.println("Trouble stating Robot");}
-		robot=r;
-		if(robot==null)System.out.println("Error robot has not been initialized");
+		try {
+			robot=new Robot();
+		}
+		catch (final AWTException e) {
+			System.out.println("Trouble stating Robot");
+		}
+		if (robot==null)
+			System.out.println("Error robot has not been initialized");
 	}
 	public boolean keyPressed(int keyCode) {
-		if (pressedKeys[keyCode]) {
-			pressedKeys[keyCode] = false;
-			return true;
-		}
-		return false; 
+		return pressedKeys[keyCode];
 	}
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent wheel) {
-		wheelRotation += wheel.getWheelRotation(); 
+		wheelRotation += wheel.getWheelRotation();
 	}
 	@Override
 	public void mouseClicked(MouseEvent mouse) {
@@ -74,6 +73,7 @@ public class Input implements KeyListener, MouseListener, MouseWheelListener, Fo
 	}
 	@Override
 	public void keyReleased(KeyEvent key) {
+		pressedKeys[key.getKeyCode()] = false;
 	}
 	@Override
 	public void keyTyped(KeyEvent key) {

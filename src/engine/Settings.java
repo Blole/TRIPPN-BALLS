@@ -1,3 +1,4 @@
+package engine;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
@@ -11,6 +12,7 @@ public class Settings {
 	private static final String keyBindSection = "KeyBinds";
 	private static final String mouseSection = "Mouse";
 	private static final String cameraSection = "Camera";
+	private static final String worldSection = "World";
 	
 	private static Wini constantsIni;
 	private static Wini settingsIni;
@@ -27,6 +29,7 @@ public class Settings {
 	public static float zoomInit = 100;
 	public static float zoomMax = 1000;
 	public static float zoomMin = 2.1f;
+	public static String worldMap = "world.bmp";
 	
 	public static void loadSettings() {
 		try {
@@ -46,6 +49,7 @@ public class Settings {
 			zoomInit	= settingsIni.get(cameraSection, "zoomInit", float.class);
 			zoomMin		= settingsIni.get(cameraSection, "zoomMin", float.class);
 			zoomMax		= settingsIni.get(cameraSection, "zoomMax", float.class);
+			worldMap	= settingsIni.get(worldSection,  "map", String.class);
 			
 		} catch (InvalidFileFormatException e) {
 			System.out.printf("Settings file '%s' not found.. sort of. Default key binds loaded.", settingsFileName);

@@ -1,6 +1,11 @@
 package attachables;
 
+import interfaces.SphereAttachable;
+
 import javax.media.opengl.GL2;
+
+import engine.Engine;
+
 
 import models.Sphere;
 
@@ -10,49 +15,45 @@ public class Pyramid implements SphereAttachable {
 	private float yaw = 0;
 	private float pitch = 0;
 	private float roll = 0;
-	private float angleChange;
+	private float rollIncrement;
 	
-	public Pyramid (float yaw, float pitch, float rollIncrement) {
+	public Pyramid (float yaw, float pitch, float rollIncrement, float scale) {
 		this.yaw = yaw;
 		this.pitch = pitch;
-		this.angleChange = rollIncrement;
+		this.rollIncrement = rollIncrement;
+		this.scale = scale;
 	}
 
 	@Override
 	public void move() {
-		roll += angleChange;
+		roll += rollIncrement;
 	}
 
 	@Override
-	public void render(GL2 gl) {
-		gl.glPushMatrix();
-		gl.glRotatef(yaw,   0, 1, 0);
-		gl.glRotatef(pitch, 1, 0, 0);
-		gl.glRotatef(roll,  0, 1, 0);
-		gl.glTranslatef(0, parent.getRadius(), 0);
+	public void render() {
+		Engine.gl.glPushMatrix();
+		Engine.gl.glRotatef(yaw,   0, 1, 0);
+		Engine.gl.glRotatef(pitch, 1, 0, 0);
+		Engine.gl.glRotatef(roll,  0, 1, 0);
+		Engine.gl.glTranslatef(0, parent.getRadius(), 0);
+		Engine.gl.glScalef(scale, scale, scale);
 		
-		gl.glBegin(GL2.GL_TRIANGLE_FAN);
-		gl.glColor3f(1, 1, 1);	gl.glVertex3f(     0, scale,     0);
-		gl.glColor3f(0, 0, 1);	gl.glVertex3f( scale,     0, scale);
-		gl.glColor3f(0, 1, 0);	gl.glVertex3f(-scale,     0, scale);
-		gl.glColor3f(1, 0, 0);	gl.glVertex3f(-scale,     0,-scale);
-		gl.glColor3f(0, 0, 0);	gl.glVertex3f( scale,     0,-scale);
-		gl.glColor3f(0, 0, 1);	gl.glVertex3f( scale,     0, scale);
-		gl.glEnd();
+		Engine.gl.glBegin(GL2.GL_TRIANGLE_FAN);
+		Engine.gl.glColor3f(1, 1, 1);	Engine.gl.glVertex3f( 0, 1, 0);
+		Engine.gl.glColor3f(0, 0, 1);	Engine.gl.glVertex3f( 1, 0, 1);
+		Engine.gl.glColor3f(0, 1, 0);	Engine.gl.glVertex3f(-1, 0, 1);
+		Engine.gl.glColor3f(1, 0, 0);	Engine.gl.glVertex3f(-1, 0,-1);
+		Engine.gl.glColor3f(0, 0, 0);	Engine.gl.glVertex3f( 1, 0,-1);
+		Engine.gl.glColor3f(0, 0, 1);	Engine.gl.glVertex3f( 1, 0, 1);
+		Engine.gl.glEnd();
 		
-		gl.glPopMatrix();
+		Engine.gl.glPopMatrix();
 	}
 
 	@Override
 	public boolean markedForRemoval() {
 		// TODO Auto-generated method stub
 		return false;
-	}
-
-	@Override
-	public float initialRotation() {
-		// TODO Auto-generated method stub
-		return 0;
 	}
 
 	@Override
