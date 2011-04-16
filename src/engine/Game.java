@@ -64,20 +64,29 @@ public final class Game {
 		}
 	}
 	
+	/**
+	 * Not perfect, even if gravity source is frozen, it will move
+	 * because of attraction.
+	 */
 	private void gravity() {
 		Engine.phase("gravity",true);
 		for (Entity entityWithGravity : Entity.hasGravity) {
-			entityWithGravity.freeze(true);
+			boolean resetIfOriginallyFrozen = entityWithGravity.isFrozen();
+			entityWithGravity.setFreeze(true);
 			for (Entity other : Entity.all) {
 				if (!other.isFrozen()) {
 					entityWithGravity.attract(other);
 				}
 			}
-			entityWithGravity.freeze(false);
+			entityWithGravity.setFreeze(resetIfOriginallyFrozen);
 		}
 		Engine.phase("gravity",false);
 	}
 	
+	/**
+	 * Collision is only between spheres and
+	 * does not include rotation. 
+	 */
 	private void collision() {
 		Engine.phase("collide",true);
 		for (int i=0; i<Entity.all.size()-1; i++) {
@@ -90,6 +99,9 @@ public final class Game {
 		Engine.phase("collide",false);
 	}
 	
+	/**
+	 * Temporary collision against the xz-plane.
+	 */
 	private void groundCollision() {
 		Engine.phase("groundCollision",true);
 		for (Entity entity : Entity.all) {
@@ -211,10 +223,8 @@ public final class Game {
 		if (input.keyPressed(KeyEvent.VK_I))
 			System.out.println("me.speed:"+me.speed+"    me.pos:"+me.pos+"   camera.pos:"+camera.pos);
 		if (input.keyPressed(KeyEvent.VK_B)) {
-			for (Entity entity : Entity.all) {
-				entity.speed.set(0,0,0);
-				entity.freeze(true);
-			}
+			for (Entity entity : Entity.all)
+				entity.setOwnGravity(false).speed.set(0,0,0);
 		}
 		if (input.keyPressed(KeyEvent.VK_C)) {
 			for (Entity entity : Entity.all)
@@ -224,12 +234,10 @@ public final class Game {
 			drawAxes = !drawAxes;
 		}
 		if (input.keyPressed(KeyEvent.VK_N)) {
-			Entity entity = new Entity("sphere");
-			entity.pos.set(me.pos.x, me.pos.y, me.pos.z-2.5f);
+			new Entity("sphere").pos.set(me.pos.x, me.pos.y, me.pos.z-2.5f);
 		}
 		if (input.keyPressed(KeyEvent.VK_M)) {
-			Entity entity = new Entity("sphere");
-			entity.pos.set(me.pos.x, me.pos.y, me.pos.z-10);
+			new Entity("sphere").setOwnGravity(true).pos.set(me.pos.x, me.pos.y, me.pos.z-10);
 		}
 		if (input.keyPressed(KeyEvent.VK_R)) {
 			Entity.all.clear();
@@ -238,7 +246,7 @@ public final class Game {
 			me.pos.set(0,0,0);
 		}
 		if (input.keyPressed(KeyEvent.VK_G))
-			me.setHasOwnGravity(!me.hasOwnGravity());
+			me.setOwnGravity(!me.hasOwnGravity());
 		if (input.keyPressed(KeyEvent.VK_UP)) {
 			camera.setFOV(camera.getFOV()+3);
 			System.out.printf("FOV set to: %3.0f degrees\n", camera.getFOV());

@@ -71,7 +71,7 @@ public class Entity {
 	/*
 	 * Set information booleans
 	 */
-	public void setHasOwnGravity(boolean hasOwnGravity) {
+	public Entity setOwnGravity(boolean hasOwnGravity) {
 		if (hasOwnGravity) {
 			if (!Entity.hasGravity.contains(this)) {
 				Entity.hasGravity.add(this);
@@ -82,9 +82,11 @@ public class Entity {
 			Entity.hasGravity.remove(this);
 			this.hasOwnGravity = false;
 		}
+		return this;
 	}
-	public void freeze(boolean freeze) {
+	public Entity setFreeze(boolean freeze) {
 		isFrozen = freeze;
+		return this;
 	}
 	
 	
