@@ -60,6 +60,10 @@ public class Vector {
 		return x*v.x + y*v.y + z*v.z;
 	}
 	
+	public Vector cross(Vector v) {
+		return new Vector(y*v.z-z*v.y,-x*v.z+z*v.x,x*v.y-y*v.x);
+	}
+	
 	public Vector proj(Vector v) {
 		return v.multiply( dot(v) / v.dot(v) );
 	}
@@ -82,10 +86,20 @@ public class Vector {
 		return multiply(length/abs());
 	}
 	public void setLengthSelf(float length) {
-		float abs = abs();
-		x *= length/abs;
-		z *= length/abs;
-		y *= length/abs;
+		length /= abs();
+		x *= length;
+		z *= length;
+		y *= length;
+	}
+	public void set(float x, float y, float z) {
+		this.x = x;
+		this.y = y;
+		this.z = z;
+	}
+	public void set(Vector v) {
+		x = v.x;
+		y = v.y;
+		z = v.z;
 	}
 	public Vector shortenIfLonger(float length) {
 		if (abs() > length)

@@ -1,105 +1,154 @@
 package engine;
 import java.awt.Point;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
-import java.util.Random;
 
 import javax.media.opengl.GL2;
 
+import structures.Entity;
 import structures.Vector;
 
 import models.*;
 
-import attachables.*;
-
 
 public final class Game {
+	private static final Vector groundGravity = new Vector(0,-0.02f,0);
 	private Input input;
 	private Camera camera;
-	private Sphere me;
-	private Random random = new Random();
-	private ArrayList<Sphere> spheres = new ArrayList<Sphere>();
+	private Entity me;
 	private boolean drawAxes = true;
 //	private VBOdammit vbo;
 	private WorldMesh worldMesh;
+	private Sun sun;
 
 	public Game (Input input) {
 		this.input = input;
 		Settings.loadSettings();
 		worldMesh = new WorldMesh();
 		worldMesh.loadHeightMap(Settings.worldMap);
+		sun = new Sun();
 		
-		for (int i=0; i<0; i++)
-			spheres.add(new Sphere(new Vector(r(-50,50),0,r(-50,50)), 1, 10, 10));
-		for (Sphere sphere : spheres) {
-			sphere.setAffectedByGravity(true);
-			sphere.enableTrack(new float[]{r(0,1),r(0,1),r(0,1)}, 5000);
-		}
-		me = new Sphere(new Vector(0,0,0), 1, 20, 20);
-		me.setAffectedByGravity(true);
-		me.enableTrack(new float[]{1,0,0}, 5000);
-		me.attach(new Pyramid(  0,  0, 0, 0.5f));
-		me.attach(new Pyramid(  0, 90, 0, 0.3f));
-		me.attach(new Pyramid( 90, 90, 0, 0.3f));
-		me.attach(new Pyramid(180, 90, 0, 0.3f));
-		me.attach(new Pyramid(270, 90, 0, 0.3f));
-		me.attach(new Pyramid(  0,180, 0, 0.1f));
-		spheres.add(me);
+		me = new Entity("sphere");
+//		me.enableTrack(new float[]{1,0,0}, 5000);
+//		me.attach(new Pyramid(  0,  0, 0, 0.5f));
+//		me.attach(new Pyramid(  0, 90, 0, 0.3f));
+//		me.attach(new Pyramid( 90, 90, 0, 0.3f));
+//		me.attach(new Pyramid(180, 90, 0, 0.3f));
+//		me.attach(new Pyramid(270, 90, 0, 0.3f));
+//		me.attach(new Pyramid(  0,180, 0, 0.1f));
 		
-		camera = new Camera(new Vector(0,0,0));
-		camera.setTarget(me);
+		camera = new Camera();
+		camera.setTarget(me.pos);
 		camera.setFOV(90);
 //		vbo = new VBOdammit();
 	}
-	public float r(float min, float max) {
-		return random.nextFloat()*(max-min)+min;
-	}
 	public void tick() {
 		parseInput();
-		for (int i=0; i<spheres.size()-1; i++) {
-			Sphere mark = spheres.get(i);
-			if (!mark.isAffectedByGravity())
-				continue;
-			for (int j=i+1; j<spheres.size(); j++) {
-				Sphere runner = spheres.get(j);
-				if (runner.isAffectedByGravity())
-					mark.attract(runner);
-			}
+		move();
+		groundGravity();
+		gravity();
+		groundCollision();
+		collision();
+		render();
+	}
+	private void move() {
+		for (Entity entity : Entity.all) {
+			if (!entity.isFrozen())
+				entity.move();
 		}
+	}
+	
+	private void groundGravity() {
+		for (Entity entity : Entity.all) {
+			if (!entity.isFrozen())
+				entity.speed.addSelf(groundGravity);
+		}
+	}
+	
+	private void gravity() {
+		Engine.phase("gravity",true);
+		for (Entity entityWithGravity : Entity.hasGravity) {
+			entityWithGravity.freeze(true);
+			for (Entity other : Entity.all) {
+				if (!other.isFrozen()) {
+					entityWithGravity.attract(other);
+				}
+			}
+			entityWithGravity.freeze(false);
+		}
+		Engine.phase("gravity",false);
+	}
+	
+	private void collision() {
 		Engine.phase("collide",true);
-		for (Sphere sphere : spheres)
-			sphere.move();
-		for (int i=0; i<spheres.size()-1; i++) {
-			Sphere mark = spheres.get(i);
-			for (int j=i+1; j<spheres.size(); j++) {
-				Sphere runner = spheres.get(j);
+		for (int i=0; i<Entity.all.size()-1; i++) {
+			Entity mark = Entity.all.get(i);
+			for (int j=i+1; j<Entity.all.size(); j++) {
+				Entity runner = Entity.all.get(j);
 				mark.checkForCollision(runner);
 			}
 		}
 		Engine.phase("collide",false);
-		
+	}
+	
+	private void groundCollision() {
+		Engine.phase("groundCollision",true);
+		for (Entity entity : Entity.all) {
+			if (!entity.isFrozen() && entity.pos.y < 0) {
+				entity.pos.y = 0;
+				entity.speed.y *= -0.5f;
+			}
+		}
+		Engine.phase("groundCollision",false);
+	}
+	
+	private void render() {
 		Engine.phase("render",true);
 		Engine.gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
 		camera.setUpCameraLook();
 		Engine.gl.glMatrixMode(GL2.GL_MODELVIEW);
-		Engine.gl.glDisable(GL2.GL_LIGHTING);Engine.gl.glDisable(GL2.GL_LIGHT0);Engine.gl.glDisable(GL2.GL_TEXTURE_2D);
-		Engine.gl.glDisableClientState(GL2.GL_VERTEX_ARRAY);
-		Engine.gl.glDisableClientState(GL2.GL_NORMAL_ARRAY);
 		Engine.gl.glLoadIdentity();
 		if (drawAxes)
 			drawAxes();
 		
-		Engine.gl.glEnable(GL2.GL_LIGHTING);Engine.gl.glEnable(GL2.GL_LIGHT0);Engine.gl.glEnable(GL2.GL_TEXTURE_2D);
+		Engine.gl.glEnable(GL2.GL_LIGHTING);
+		Engine.gl.glEnable(GL2.GL_LIGHT0);
+//		Engine.gl.glEnable(GL2.GL_TEXTURE_2D);
 		Engine.gl.glEnableClientState(GL2.GL_VERTEX_ARRAY);
 		Engine.gl.glEnableClientState(GL2.GL_NORMAL_ARRAY);
-		worldMesh.render();
-		for (Sphere model : spheres)
-			model.render();
-		me.render();
+		Engine.gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
+		sun.render();
+		for (Entity entity : Entity.all)
+			entity.render();
+		//worldMesh.render();
+		
+//		for (int x=-5; x<5; x++) {
+//			for (int z=-5; z<5; z++) {
+//				drawQuad(x*9,1-Math.max(x*z, -x*z),z*9);
+//			}
+//		}
+		Engine.gl.glDisable(GL2.GL_LIGHTING);
+		Engine.gl.glDisable(GL2.GL_LIGHT0);
+//		Engine.gl.glDisable(GL2.GL_TEXTURE_2D);
+		Engine.gl.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+		Engine.gl.glDisableClientState(GL2.GL_NORMAL_ARRAY);
+		Engine.gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		Engine.phase("render",false);
-//		vbo.render();
 	}
 	
+	private void drawQuad(int x, int y, int z) {
+		Engine.gl.glLoadIdentity();
+		Engine.gl.glTranslatef(x,y,z);
+		//Engine.gl.glRotatef(me.getPos().y, 1, 0, 0);
+		Engine.gl.glRotatef(-x, 0, 0, 1);
+		Engine.gl.glRotatef(z, 1, 0, 0);
+		Engine.gl.glBegin(GL2.GL_QUADS);
+		Engine.gl.glNormal3f(0, 1, 0);
+		Engine.gl.glVertex3f(0, 0, 0);
+		Engine.gl.glVertex3f(0, 0, 9);
+		Engine.gl.glVertex3f(9, 0, 9);
+		Engine.gl.glVertex3f(9, 0, 0);
+		Engine.gl.glEnd();
+	}
 	private void drawAxes() {
 		Engine.gl.glPointSize(1);
 		Engine.gl.glBegin(GL2.GL_LINES);
@@ -130,17 +179,17 @@ public final class Game {
 		switch (camera.getMode()) {
 		case TARGET:
 			if (input.keyPressed(Settings.forward))
-				me.getSpeed().addSelf(new Vector(0,0,-change));
+				me.speed.addSelf(new Vector(0,0,-change));
 			if (input.keyPressed(Settings.backward))
-				me.getSpeed().addSelf(new Vector(0,0,change));
+				me.speed.addSelf(new Vector(0,0,change));
 			if (input.keyPressed(Settings.strafeR))
-				me.getSpeed().addSelf(new Vector(change,0,0));
+				me.speed.addSelf(new Vector(change,0,0));
 			if (input.keyPressed(Settings.strafeL))
-				me.getSpeed().addSelf(new Vector(-change,0,0));
+				me.speed.addSelf(new Vector(-change,0,0));
 			if (input.keyPressed(Settings.up))
-				me.getSpeed().addSelf(new Vector(0,change,0));
+				me.speed.addSelf(new Vector(0,change,0));
 			if (input.keyPressed(Settings.down))
-				me.getSpeed().addSelf(new Vector(0,-change,0));
+				me.speed.addSelf(new Vector(0,-change,0));
 			break;
 		case FREELOOK:
 			if (input.keyPressed(Settings.forward))
@@ -158,55 +207,54 @@ public final class Game {
 			break;
 		}
 		if (input.keyPressed(KeyEvent.VK_CONTROL))
-			me.setSpeed(new Vector(0,0,0));
+			me.speed.set(0,0,0);
 		if (input.keyPressed(KeyEvent.VK_I))
-			System.out.println("me.speed:"+me.getSpeed()+"    me.pos:"+me.getPos()+"   camera.pos:"+camera.pos);
+			System.out.println("me.speed:"+me.speed+"    me.pos:"+me.pos+"   camera.pos:"+camera.pos);
 		if (input.keyPressed(KeyEvent.VK_B)) {
-			for (Sphere sphere : spheres) {
-				sphere.setSpeed(new Vector(0,0,0));
-				sphere.setAffectedByGravity(false);
+			for (Entity entity : Entity.all) {
+				entity.speed.set(0,0,0);
+				entity.freeze(true);
 			}
 		}
 		if (input.keyPressed(KeyEvent.VK_C)) {
-			for (Sphere sphere : spheres)
-				sphere.clearTrack();
+			for (Entity entity : Entity.all)
+				;//entity.clearTrack();
 		}
 		if (input.keyPressed(KeyEvent.VK_H)) {
 			drawAxes = !drawAxes;
 		}
 		if (input.keyPressed(KeyEvent.VK_N)) {
-			Sphere sphere = new Sphere(me.getPos().add(new Vector(0,0,me.getRadius()+1)), 1, 10, 10);
-			sphere.setAffectedByGravity(false);
-			//sphere.enableTrack(new float[]{r(0,1),r(0,1),r(0,1)}, 500);
-			spheres.add(sphere);
+			Entity entity = new Entity("sphere");
+			entity.pos.set(me.pos.x, me.pos.y, me.pos.z-2.5f);
 		}
 		if (input.keyPressed(KeyEvent.VK_M)) {
-			Sphere sphere = new Sphere(me.getPos().add(new Vector(0,0,me.getRadius()+10)), 1, 10, 10);
-			sphere.setAffectedByGravity(true);
-			//sphere.enableTrack(new float[]{r(0,1),r(0,1),r(0,1)}, 500);
-			spheres.add(sphere);
+			Entity entity = new Entity("sphere");
+			entity.pos.set(me.pos.x, me.pos.y, me.pos.z-10);
 		}
 		if (input.keyPressed(KeyEvent.VK_R)) {
-			spheres = new ArrayList<Sphere>();
-			spheres.add(me);
-			me.setSpeed(new Vector(0,0,0));
-			me.setPos(new Vector(0,0,0));
-			me.clearTrack();
+			Entity.all.clear();
+			Entity.all.add(me);
+			me.speed.set(0,0,0);
+			me.pos.set(0,0,0);
 		}
 		if (input.keyPressed(KeyEvent.VK_G))
-			me.setAffectedByGravity(!me.isAffectedByGravity());
+			me.setHasOwnGravity(!me.hasOwnGravity());
 		if (input.keyPressed(KeyEvent.VK_UP)) {
 			camera.setFOV(camera.getFOV()+3);
-			System.out.printf("FOV set to: %3f degrees\n", camera.getFOV());
+			System.out.printf("FOV set to: %3.0f degrees\n", camera.getFOV());
 		}
 		if (input.keyPressed(KeyEvent.VK_DOWN)) {
 			camera.setFOV(camera.getFOV()-3);
-			System.out.printf("FOV set to: %3f degrees\n", camera.getFOV());
+			System.out.printf("FOV set to: %3.0f degrees\n", camera.getFOV());
 		}
 		
 		int clicks = input.getMouseWheelRotation();
 		if (clicks != 0)
 			camera.zoom(clicks*Settings.zoomStep);
+		if (input.keyPressed(KeyEvent.VK_LEFT))
+			camera.zoom(-Settings.zoomStep);
+		if (input.keyPressed(KeyEvent.VK_RIGHT))
+			camera.zoom(Settings.zoomStep);
 		
 		if (input.keyPressed(Settings.menu))
 			input.keepCursorCenteredAndHidden(false);

@@ -32,25 +32,37 @@ public final class ModelLoader {
 	}
 	
 	private static VBOinfo sphere() {
-		final int longitude = 4;
-		final int latitude = 4;
+		final int longitude = 20;
+		final int latitude = 20;
 		
 		VBOinfo vbo = new VBOinfo();
 		vbo.drawType = GL2.GL_QUADS;
 		int vertices = longitude*(latitude-2)+2;
-		vbo.chunkSize = (3+3)*Buffers.SIZEOF_FLOAT;
+		vbo.chunkSize = (3+3+2)*Buffers.SIZEOF_FLOAT;
 		vbo.vbo = Engine.allocateVBO(vertices*vbo.chunkSize, GL2.GL_STATIC_DRAW);
 		FloatBuffer vb = Engine.mapVBO(vbo.vbo).asFloatBuffer();
 		vb.put(0).put(1).put(0);
 		vb.put(0).put(1).put(0);
+		vb.put(0).put(0);
 		for (float i=1; i<latitude-1; i++) {
 			for (float j=0; j<longitude; j++) {
-				vb.put(cos(2*j/longitude)*sin(i/(latitude-1))).put(cos(i/(latitude-1))).put(sin(2*j/longitude)*sin(i/(latitude-1)));
-				vb.put(cos(2*j/longitude)*sin(i/(latitude-1))).put(cos(i/(latitude-1))).put(sin(2*j/longitude)*sin(i/(latitude-1)));
+				vb
+				.put(cos(2*j/longitude)*sin(i/(latitude-1)))
+				.put(cos(i/(latitude-1)))
+				.put(sin(2*j/longitude)*sin(i/(latitude-1)));
+				vb
+				.put(cos(2*j/longitude)*sin(i/(latitude-1)))
+				.put(cos(i/(latitude-1)))
+				.put(sin(2*j/longitude)*sin(i/(latitude-1)));
+				vb
+				.put(0)
+				.put(0);
 			}
 		}
 		vb.put(0).put(-1).put(0);
 		vb.put(0).put(-1).put(0);
+		vb.put(0).put(0);
+		//Engine.debugBuffer("sphere", vb, 8);
 		Engine.unmapVBO(vbo.vbo);
 		
 		vbo.indices = longitude*(latitude-1)*4;
@@ -74,10 +86,7 @@ public final class ModelLoader {
 			.put((short) (vertices-1))
 			.put((short) (vertices-1));
 		}
-		ib.flip();
-		System.out.println(ib);
-		while (ib.hasRemaining())
-			System.out.printf("%5d\t%5d\t%5d\t%5d\n",ib.get(),ib.get(),ib.get(),ib.get());
+		//Engine.debugBuffer("sphere", ib, 4);
 		Engine.unmapVBO(vbo.ibo);
 		
 		return vbo;

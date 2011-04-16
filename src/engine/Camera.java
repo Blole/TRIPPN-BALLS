@@ -3,8 +3,6 @@ import java.awt.Point;
 
 import javax.media.opengl.GL2;
 
-import models.Sphere;
-
 import structures.Vector;
 
 
@@ -12,24 +10,23 @@ public class Camera {
 	public float pitch;
 	public float yaw;
 	public float roll;
-	public Sphere target;
+	public Vector target;
 	public Vector offset;
 	private float zoom;
 	private Mode mode;
 	private float aspect;
 	private float fovy;
 	private float realFOV;
-	public Vector pos;
+	public final Vector pos = new Vector(0,0,0);
 	
 	public static enum Mode {
 		FREELOOK, LOCKED_FOLLOW, TARGET
 	}
 	
-	public Camera(Vector pos) {
-		this(pos, 20, 5, 0);
+	public Camera() {
+		this(20, 5, 0);
 	}
-	public Camera(Vector pos, float pitch, float yaw, float roll) {
-		this.pos = pos;
+	public Camera(float pitch, float yaw, float roll) {
 		this.pitch = pitch;
 		this.yaw = yaw;
 		this.roll = roll;
@@ -59,8 +56,8 @@ public class Camera {
 			break;
 		}
 	}
-	public void setTarget(Sphere me) {
-	    this.target = me;
+	public void setTarget(Vector target) {
+	    this.target = target;
 	    mode = Mode.TARGET;
 	}
 	public void setMode(Mode mode) {
@@ -109,7 +106,7 @@ public class Camera {
 			Engine.gl.glTranslatef(0, 0, -zoom);
 			Engine.gl.glRotatef(pitch, 1, 0, 0);
 			Engine.gl.glRotatef(yaw, 0, 1, 0);
-			Engine.gl.glTranslatef(-target.getPos().x, -target.getPos().y, -target.getPos().z);
+			Engine.gl.glTranslatef(-target.x, -target.y, -target.z);
 			break;
 		}
 	}

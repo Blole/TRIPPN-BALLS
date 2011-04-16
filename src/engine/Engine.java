@@ -4,8 +4,11 @@ import java.awt.Frame;
 import java.awt.GraphicsEnvironment;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
@@ -28,12 +31,14 @@ public final class Engine implements GLEventListener {
 	private static String title = "";
 	private static float fps;
 	
+	public Random random = new Random();
 	public static GL2 gl;
 	public static final PrintStream out = System.out;
 	public static final PrintStream err = System.err;
 	
 	public static Map<String, TimeThing> times = new HashMap<String, TimeThing>();
 	public static Stopwatch renderingTime = new Stopwatch();
+	private static float angle;
 
     public static void main(String[] args) {
     	new Engine();
@@ -80,11 +85,13 @@ public final class Engine implements GLEventListener {
 		gl.glHint(GL2.GL_PERSPECTIVE_CORRECTION_HINT, GL2.GL_NICEST);
 		
 		float mat_specular[] = { 1, 1, 1, 1 };
-	    float mat_shininess[] = { 100 };
-	    float light_position[] = { 9, 9, 9, 0 };
-	    //gl.glMaterialfv(GL2.GL_FRONT, GL2.GL_SPECULAR, mat_specular, 0);
-	    gl.glMaterialfv(GL2.GL_FRONT, GL2.GL_SHININESS, mat_shininess, 0);
-	    gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_POSITION, light_position, 0);
+	    float mat_shininess[] = { 30 };
+	    float light_position[] = { 20, 20, 20, 0 };
+//	    gl.glMaterialfv(GL2.GL_FRONT, GL2.GL_SPECULAR, mat_specular, 0);
+//	    gl.glMaterialfv(GL2.GL_FRONT, GL2.GL_SHININESS, mat_shininess, 0);
+//	    gl.glMaterialfv(GL2.GL_FRONT, GL2.GL_SHININESS, mat_shininess, 0);
+//	    gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_POSITION, light_position, 0);
+//	    gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_DIFFUSE, light_diffuse, 0)
 	    
 		game=new Game(input);
 	}
@@ -95,7 +102,7 @@ public final class Engine implements GLEventListener {
 		updateFPS();
 		gl.glFlush();
 	}
-
+	
 	@Override
 	public void reshape(GLAutoDrawable drawable, int topY, int topX, int width, int height) {
 		game.reshape(topX, topY, width, height);
@@ -104,7 +111,7 @@ public final class Engine implements GLEventListener {
 	public static void setTitle(String title) {
 		Engine.title = title;
 	}
-
+	
 	private static void updateTitle() {
 		long rend = times.get("render").getTimeAndReset();
 		long coll = times.get("collide").getTimeAndReset();
@@ -149,26 +156,58 @@ public final class Engine implements GLEventListener {
 		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
 	}
 	public static void drawVBO(VBOinfo vbo) {
+//		gl.glLoadIdentity();
+		//gl.glRotatef(angle+=150f,0,1,0);
 		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, vbo.ibo);
 		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, vbo.vbo);
 		gl.glVertexPointer(3,	GL2.GL_FLOAT, vbo.chunkSize, 0);
-		gl.glNormalPointer(		GL2.GL_FLOAT, vbo.chunkSize, Buffers.SIZEOF_FLOAT*3*3);
-		gl.glTexCoordPointer(2,	GL2.GL_FLOAT, vbo.chunkSize, Buffers.SIZEOF_FLOAT*3*6);
+		gl.glNormalPointer(		GL2.GL_FLOAT, vbo.chunkSize, 3*3*Buffers.SIZEOF_FLOAT);
+		gl.glTexCoordPointer(2,	GL2.GL_FLOAT, vbo.chunkSize, 3*6*Buffers.SIZEOF_FLOAT);
 		gl.glDrawElements(vbo.drawType, vbo.indices, GL2.GL_UNSIGNED_SHORT, 0);
-		
-		//gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
-		//gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, 0);
+//		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
+//		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, 0);
+		unmapVBO(vbo.vbo);
+		unmapVBO(vbo.ibo);
 	}
+	public static void drawNormals(VBOinfo vbo, int length) {
+		enableOldColoredDrawing(true);
+		gl.glLineWidth(2);
+		FloatBuffer b = mapVBO(vbo.vbo).asFloatBuffer();
+		gl.glBegin(GL2.GL_LINES);
+		gl.glColor3f(0.1f,1,0.1f);
+		while (b.hasRemaining()) {
+			float vertex[] = new float[]{b.get(), b.get(), b.get()};
+			float normal[] = new float[]{b.get(), b.get(), b.get()};
+			gl.glVertex3fv(vertex, 0);
+			gl.glVertex3f(vertex[0]+normal[0]*length, vertex[1]+normal[1]*length, vertex[2]+normal[2]*length);
+			b.get();b.get();
+		}
+		gl.glEnd();
+		unmapVBO(vbo.vbo);
+		enableOldColoredDrawing(false);
+	}
+	
+	public static void enableOldColoredDrawing(boolean enable) {
+		if (enable) {
+			gl.glDisable(GL2.GL_LIGHTING);
+			gl.glDisable(GL2.GL_LIGHT0);
+		}
+		else {
+			gl.glEnable(GL2.GL_LIGHTING);
+			gl.glEnable(GL2.GL_LIGHT0);
+		}
+	}
+	
 	public static void deleteVBO(int id) {
 		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, id);
 		gl.glDeleteBuffers(1, new int[]{id}, 1);
 		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
 	}
-
+	
 	public static Frame getFrame() {
 		return frame;
 	}
-
+	
 	public static void phase(String key, boolean start) {
 		TimeThing timeThing = times.get(key);
 		if (timeThing == null) {
@@ -194,6 +233,29 @@ public final class Engine implements GLEventListener {
 			long temp = time;
 			time = 0;
 			return temp;
+		}
+	}
+	public static void debugBuffer(String start, FloatBuffer vb, int gets) {
+		vb.rewind();
+		start += " vb: ";
+		System.out.println(start+vb);
+		while (vb.hasRemaining()) {
+			System.out.print(start);
+			for (int i=0; i<gets; i++)
+				System.out.printf("%7.1f",vb.get());
+			System.out.println();
+		}
+	}
+	public static void debugBuffer(String start, ShortBuffer ib, int gets) {
+		ib.rewind();
+		
+		start += " ib: ";
+		System.out.println(start+ib);
+		while (ib.hasRemaining()) {
+			System.out.print(start);
+			for (int i=0; i<gets; i++)
+				System.out.printf("%5d",ib.get());
+			System.out.println();
 		}
 	}
 }
