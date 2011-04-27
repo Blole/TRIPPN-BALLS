@@ -19,7 +19,20 @@ import java.awt.image.BufferedImage;
 
 
 public class Input implements KeyListener, MouseListener, MouseWheelListener, FocusListener, WindowListener {
-	private boolean[] pressedKeys = new boolean[526];
+	/*
+	 * Delay, in frames (for now), between the first
+	 * and second time keyTyped will return true if
+	 * a key is held down. And the delay between
+	 * each time after that.
+	 * the delay must be > 0:
+	 * 1 = every frame
+	 * 2 = every other frame and so on
+	 */
+	private static final byte firstDelay = 10;
+	private static final byte delay = 1;
+	
+	private boolean[] keyDown = new boolean[526];
+	private byte[]   keyTyped = new byte[526];
 	private boolean focus = false;
 	private Robot robot;
 	private boolean keepMouseCenteredAndHidden;
@@ -38,10 +51,23 @@ public class Input implements KeyListener, MouseListener, MouseWheelListener, Fo
 			System.out.println("Trouble stating Robot");
 		}
 		if (robot==null)
-			System.out.println("Error robot has not been initialized");
+			System.out.println("Error robot for centering mouse has not been initialized");
 	}
-	public boolean keyPressed(int keyCode) {
-		return pressedKeys[keyCode];
+	public boolean keyTyped(int keyCode) {
+		if (keyDown[keyCode]) {
+			keyTyped[keyCode]--;
+			if (keyTyped[keyCode] <= 0) {
+				if (keyTyped[keyCode] == -1) //only if it was set to 0 will it reach this.
+					keyTyped[keyCode] = firstDelay;
+				else
+					keyTyped[keyCode] = delay;
+				return true;
+			}
+		}
+		return false;
+	}
+	public boolean keyDown(int keyCode) {
+		return keyDown[keyCode];
 	}
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent wheel) {
@@ -69,11 +95,12 @@ public class Input implements KeyListener, MouseListener, MouseWheelListener, Fo
 	}
 	@Override
 	public void keyPressed(KeyEvent key) {
-		pressedKeys[key.getKeyCode()] = true;
+		keyDown[key.getKeyCode()] = true;
+		keyTyped[key.getKeyCode()] = 0;
 	}
 	@Override
 	public void keyReleased(KeyEvent key) {
-		pressedKeys[key.getKeyCode()] = false;
+		keyDown[key.getKeyCode()] = false;
 	}
 	@Override
 	public void keyTyped(KeyEvent key) {

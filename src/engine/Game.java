@@ -4,10 +4,11 @@ import java.awt.event.KeyEvent;
 
 import javax.media.opengl.GL2;
 
+import models.Sun;
+import models.WorldMesh;
+
 import structures.Entity;
 import structures.Vector;
-
-import models.*;
 
 
 public final class Game {
@@ -19,6 +20,7 @@ public final class Game {
 //	private VBOdammit vbo;
 	private WorldMesh worldMesh;
 	private Sun sun;
+	private boolean enableGroundGravity = true;
 
 	public Game (Input input) {
 		this.input = input;
@@ -27,7 +29,7 @@ public final class Game {
 		worldMesh.loadHeightMap(Settings.worldMap);
 		sun = new Sun();
 		
-		me = new Entity("sphere");
+		me = new Entity("sphere", false);
 //		me.enableTrack(new float[]{1,0,0}, 5000);
 //		me.attach(new Pyramid(  0,  0, 0, 0.5f));
 //		me.attach(new Pyramid(  0, 90, 0, 0.3f));
@@ -58,9 +60,11 @@ public final class Game {
 	}
 	
 	private void groundGravity() {
-		for (Entity entity : Entity.all) {
-			if (!entity.isFrozen())
-				entity.speed.addSelf(groundGravity);
+		if (enableGroundGravity) {
+			for (Entity entity : Entity.all) {
+				if (!entity.isFrozen())
+					entity.speed.addSelf(groundGravity);
+			}
 		}
 	}
 	
@@ -107,7 +111,10 @@ public final class Game {
 		for (Entity entity : Entity.all) {
 			if (!entity.isFrozen() && entity.pos.y < 0) {
 				entity.pos.y = 0;
-				entity.speed.y *= -0.5f;
+				if (Math.abs(entity.speed.y) < 0.1f)
+					entity.speed.y = 0;
+				else
+					entity.speed.y *= -0.5f;
 			}
 		}
 		Engine.phase("groundCollision",false);
@@ -129,6 +136,7 @@ public final class Game {
 		Engine.gl.glEnableClientState(GL2.GL_NORMAL_ARRAY);
 		Engine.gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 		sun.render();
+		Engine.gl.glLoadIdentity();
 		for (Entity entity : Entity.all)
 			entity.render();
 		//worldMesh.render();
@@ -182,7 +190,7 @@ public final class Game {
 	}
 	private void parseInput() {
 		float change = 0.1f;
-		if (input.keyPressed(KeyEvent.VK_T)) {
+		if (input.keyTyped(KeyEvent.VK_T)) {
 			if (camera.getMode() == Camera.Mode.TARGET)
 				camera.setMode(Camera.Mode.FREELOOK);
 			else
@@ -190,68 +198,69 @@ public final class Game {
 		}
 		switch (camera.getMode()) {
 		case TARGET:
-			if (input.keyPressed(Settings.forward))
+			if (input.keyDown(Settings.forward))
 				me.speed.addSelf(new Vector(0,0,-change));
-			if (input.keyPressed(Settings.backward))
+			if (input.keyDown(Settings.backward))
 				me.speed.addSelf(new Vector(0,0,change));
-			if (input.keyPressed(Settings.strafeR))
+			if (input.keyDown(Settings.strafeR))
 				me.speed.addSelf(new Vector(change,0,0));
-			if (input.keyPressed(Settings.strafeL))
+			if (input.keyDown(Settings.strafeL))
 				me.speed.addSelf(new Vector(-change,0,0));
-			if (input.keyPressed(Settings.up))
+			if (input.keyDown(Settings.up))
 				me.speed.addSelf(new Vector(0,change,0));
-			if (input.keyPressed(Settings.down))
+			if (input.keyDown(Settings.down))
 				me.speed.addSelf(new Vector(0,-change,0));
 			break;
 		case FREELOOK:
-			if (input.keyPressed(Settings.forward))
+			if (input.keyDown(Settings.forward))
 				camera.pos.addSelf(new Vector(0,0,-change));
-			if (input.keyPressed(Settings.backward))
+			if (input.keyDown(Settings.backward))
 				camera.pos.addSelf(new Vector(0,0,change));
-			if (input.keyPressed(Settings.strafeR))
+			if (input.keyDown(Settings.strafeR))
 				camera.pos.addSelf(new Vector(change,0,0));
-			if (input.keyPressed(Settings.strafeL))
+			if (input.keyDown(Settings.strafeL))
 				camera.pos.addSelf(new Vector(-change,0,0));
-			if (input.keyPressed(Settings.up))
+			if (input.keyDown(Settings.up))
 				camera.pos.addSelf(new Vector(0,change,0));
-			if (input.keyPressed(Settings.down))
+			if (input.keyDown(Settings.down))
 				camera.pos.addSelf(new Vector(0,-change,0));
 			break;
 		}
-		if (input.keyPressed(KeyEvent.VK_CONTROL))
+		if (input.keyDown(KeyEvent.VK_CONTROL))
 			me.speed.set(0,0,0);
-		if (input.keyPressed(KeyEvent.VK_I))
+		if (input.keyTyped(KeyEvent.VK_I))
 			System.out.println("me.speed:"+me.speed+"    me.pos:"+me.pos+"   camera.pos:"+camera.pos);
-		if (input.keyPressed(KeyEvent.VK_B)) {
+		if (input.keyDown(KeyEvent.VK_B)) {
 			for (Entity entity : Entity.all)
 				entity.setOwnGravity(false).speed.set(0,0,0);
 		}
-		if (input.keyPressed(KeyEvent.VK_C)) {
+		if (input.keyTyped(KeyEvent.VK_C)) {
 			for (Entity entity : Entity.all)
 				;//entity.clearTrack();
 		}
-		if (input.keyPressed(KeyEvent.VK_H)) {
+		if (input.keyTyped(KeyEvent.VK_H)) {
 			drawAxes = !drawAxes;
 		}
-		if (input.keyPressed(KeyEvent.VK_N)) {
-			new Entity("sphere").pos.set(me.pos.x, me.pos.y, me.pos.z-2.5f);
+		if (input.keyTyped(KeyEvent.VK_N)) {
+			new Entity("sphere", false).pos.set(me.pos.x, me.pos.y, me.pos.z-2.5f);
 		}
-		if (input.keyPressed(KeyEvent.VK_M)) {
-			new Entity("sphere").setOwnGravity(true).pos.set(me.pos.x, me.pos.y, me.pos.z-10);
+		if (input.keyTyped(KeyEvent.VK_M)) {
+			new Entity("sphere", false).setOwnGravity(true).pos.set(me.pos.x, me.pos.y, me.pos.z-10);
 		}
-		if (input.keyPressed(KeyEvent.VK_R)) {
+		if (input.keyTyped(KeyEvent.VK_R)) {
+			Entity.hasGravity.clear();
 			Entity.all.clear();
 			Entity.all.add(me);
 			me.speed.set(0,0,0);
 			me.pos.set(0,0,0);
 		}
-		if (input.keyPressed(KeyEvent.VK_G))
-			me.setOwnGravity(!me.hasOwnGravity());
-		if (input.keyPressed(KeyEvent.VK_UP)) {
+		if (input.keyTyped(KeyEvent.VK_G))
+			enableGroundGravity = !enableGroundGravity ;
+		if (input.keyTyped(KeyEvent.VK_UP)) {
 			camera.setFOV(camera.getFOV()+3);
 			System.out.printf("FOV set to: %3.0f degrees\n", camera.getFOV());
 		}
-		if (input.keyPressed(KeyEvent.VK_DOWN)) {
+		if (input.keyTyped(KeyEvent.VK_DOWN)) {
 			camera.setFOV(camera.getFOV()-3);
 			System.out.printf("FOV set to: %3.0f degrees\n", camera.getFOV());
 		}
@@ -259,12 +268,12 @@ public final class Game {
 		int clicks = input.getMouseWheelRotation();
 		if (clicks != 0)
 			camera.zoom(clicks*Settings.zoomStep);
-		if (input.keyPressed(KeyEvent.VK_LEFT))
+		if (input.keyDown(KeyEvent.VK_LEFT))
 			camera.zoom(-Settings.zoomStep);
-		if (input.keyPressed(KeyEvent.VK_RIGHT))
+		if (input.keyDown(KeyEvent.VK_RIGHT))
 			camera.zoom(Settings.zoomStep);
 		
-		if (input.keyPressed(Settings.menu))
+		if (input.keyTyped(Settings.menu))
 			input.keepCursorCenteredAndHidden(false);
 		if (input.focusGained())
 			input.keepCursorCenteredAndHidden(true);

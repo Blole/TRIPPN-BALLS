@@ -45,6 +45,7 @@ public final class Engine implements GLEventListener {
 	}
     
     public Engine () {
+    	LuaLoader.init();
 		GLCanvas canvas = new GLCanvas();
         frame = new Frame("TRIPPIN' BALLS");
 		frame.add(canvas);
@@ -166,8 +167,6 @@ public final class Engine implements GLEventListener {
 		gl.glDrawElements(vbo.drawType, vbo.indices, GL2.GL_UNSIGNED_SHORT, 0);
 //		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
 //		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, 0);
-		unmapVBO(vbo.vbo);
-		unmapVBO(vbo.ibo);
 	}
 	public static void drawNormals(VBOinfo vbo, int length) {
 		enableOldColoredDrawing(true);
