@@ -1,54 +1,59 @@
 package structures;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.luaj.vm2.LuaValue;
+import collision.CollisionData;
 
 import engine.Engine;
 import engine.LuaLoader;
 import engine.ModelLoader;
+import engine.Settings;
 
 public class Entity {
 	public static final List<Entity> all = new ArrayList<Entity>();
 	public static final List<Entity> hasGravity = new ArrayList<Entity>();
-	public HashMap<String, LuaValue> userVars;
+	
+	public Doodad doodad;
 	private List<Entity> children = new ArrayList<Entity>();
 	
 	private boolean hasOwnGravity = false;
 	private boolean isFrozen = false;
-	private boolean isAnon;
-	private boolean isSphere;
+	private boolean isAnon = false;
+	private boolean isSphere = false;
 	
+	private String doodadName;
+	public String modelName;
 	public final Vector speed = new Vector(0,0,0);
 	public final Vector pos = new Vector(0,0,0);
 	
 	private float boundingRadius = 1;
 	private float mass = 1;
 	private VBOinfo vbo;
-	private Events events;
 	private Entity father;
+	public float[] tint = new float[]{1,1,1};
 	
 	public Entity (String doodadName, boolean isAnon) {
-		if (doodadName.equals("LUA_DEBUG"))
-			return;
+		this.doodadName = doodadName;
 		this.isAnon = isAnon;
 		loadEverything(doodadName);
 		if (!isAnon)
 			Entity.all.add(this);
+		tint[0] = Engine.random.nextInt()%250;
+		tint[1] = Engine.random.nextInt()%250;
+		tint[2] = Engine.random.nextInt()%250;
 	}
 	
-	@SuppressWarnings("unchecked") //.clone() will give an HashMap
 	private void loadEverything(String doodadName) {
-		vbo = ModelLoader.loadStatic(doodadName);
-		events = LuaLoader.load(doodadName);
-		this.userVars = (HashMap<String, LuaValue>) events.userVars.clone();
+		LuaLoader.loadInfo(this, doodadName);
+		doodad = LuaLoader.getDoodad(doodadName);
+		vbo = ModelLoader.loadStatic(modelName);
+		doodad.call("onBirth");
 	}
 	
 	public void render() {
 		Engine.gl.glPushMatrix();
+		Engine.gl.glColor3fv(tint, 0);
 		Engine.gl.glTranslatef(pos.x, pos.y, pos.z);
 		Engine.drawVBO(vbo);
 		for (Entity child : children)
@@ -59,36 +64,41 @@ public class Entity {
 	public void move() {
 		pos.addSelf(speed);
 	}
-	public void checkForCollision(Entity other) {
+	public void collide(CollisionData d){
+		Entity other = d.other;
+		
+		pos.subtractSelf(speed.multiply(d.t));
+		other.pos.subtractSelf(other.speed.multiply(d.t));
+		
 		Vector vectorBetween = pos.vectorTo(other.pos);
-		if (vectorBetween.isNull())
+		
+		if (vectorBetween.isZero())
 			vectorBetween.x=0.00001f;
+		
 		float distanceBetween = (vectorBetween.abs() - (boundingRadius+other.getBoundingRadius()))/2;
-		if (distanceBetween < -0.0001) {
-			Vector toOther = speed.multiply(mass).proj(vectorBetween);
-			Vector toMe = other.speed.multiply(mass).proj(vectorBetween);
+		if (distanceBetween < 0) {
 			pos.addSelf(vectorBetween.setLength(distanceBetween));
 			other.pos.addSelf(vectorBetween.setLength(-distanceBetween));
-			
-			speed.addSelf(toMe);
-			other.speed.subtractSelf(toMe);
-			other.speed.addSelf(toOther);
-			speed.subtractSelf(toOther);
-			
-			LuaValue e1 = LuaLoader.toUserdata(this);
-			LuaValue e2 = LuaLoader.toUserdata(other);
-			events.onCollide.call(e1, e2);
-			other.events.onCollide.call(e2, e1);
+			vectorBetween = pos.vectorTo(other.pos);
 		}
+		Vector toOther = speed.multiply(mass).proj(vectorBetween);
+		Vector toMe = other.speed.multiply(mass).proj(vectorBetween);
+		
+		speed.addSelf(toMe);
+		other.speed.subtractSelf(toMe);
+		other.speed.addSelf(toOther);
+		speed.subtractSelf(toOther);
+		doodad.pushCall("onCollide", LuaLoader.toUserdata(this), LuaLoader.toUserdata(other));
 	}
 	public void attract(Entity other) {
 		Vector vectorBetween = pos.vectorTo(other.pos);
+		
 		if (vectorBetween.abs() >= (boundingRadius+other.getBoundingRadius())) {
 			float xDiff = other.pos.x-pos.x;
 			float yDiff = other.pos.y-pos.y;
 			float zDiff = other.pos.z-pos.z;
 			float distance = vectorBetween.abs();
-			float attraction = 1f/(distance*distance);
+			float attraction = Settings.gravitationalConstant/(distance*distance);
 			
 			speed.x += xDiff*attraction;
 			speed.y += yDiff*attraction;
@@ -105,12 +115,37 @@ public class Entity {
 					"Entity %s is not anonymous and can therefore not be attached to %s",
 					anonEntity, this));
 		children.add(anonEntity);
-		anonEntity.imYourFather(this);
+		anonEntity.setFather(this);
 	}
 	
-	private void imYourFather(Entity father) {
+	/*
+	 * Sets
+	 */
+	private void setFather(Entity father) {
 		this.father = father;
 	}
+	public void setMass(float mass) {
+		this.mass = mass;
+	}
+	public void setBoundingRadius(float radius) {
+		this.boundingRadius = radius;
+	}
+	public void kill() {
+		doodad.pushCall("onDestroy");
+	}
+	/*
+	 * Gets
+	 */
+	public Entity getFather() {
+		return father;
+	}
+	public float getMass() {
+		return mass;
+	}
+	public float getBoundingRadius() {
+		return boundingRadius;
+	}
+	
 	/*
 	 * Set information booleans
 	 */
@@ -131,18 +166,9 @@ public class Entity {
 		isFrozen = freeze;
 		return this;
 	}
-	
-	
-	/*
-	 * Gets
-	 */
-	public float getMass() {
-		return mass;
+	public void setSphere(boolean isSphere) {
+		this.isSphere = isSphere;
 	}
-	public float getBoundingRadius() {
-		return boundingRadius;
-	}
-	
 	/*
 	 * Information booleans
 	 */
@@ -152,7 +178,14 @@ public class Entity {
 	public boolean isAnon() {
 		return isAnon;
 	}
+	public boolean isSphere() {
+		return isSphere;
+	}
 	public boolean hasOwnGravity() {
 		return hasOwnGravity;
+	}
+	@Override
+	public String toString() {
+		return "Entity: "+doodadName+"   model: "+modelName;
 	}
 }

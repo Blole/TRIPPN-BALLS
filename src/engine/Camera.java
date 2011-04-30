@@ -7,92 +7,85 @@ import structures.Vector;
 
 
 public class Camera {
-	public float pitch;
-	public float yaw;
-	public float roll;
-	public Vector target;
-	public Vector offset;
-	private float zoom;
-	private Mode mode;
-	private float aspect;
-	private float fovy;
-	private float realFOV;
-	public final Vector pos = new Vector(0,0,0);
+	public static float pitch;
+	public static float yaw;
+	public static float roll;
+	public static Vector target;
+	private static float zoom;
+	private static Mode mode;
+	private static float aspect;
+	private static float fovy;
+	private static float realFOV;
+	public static final Vector pos = new Vector(0,0,0);
 	
 	public static enum Mode {
-		FREELOOK, LOCKED_FOLLOW, TARGET
+		FREELOOK, TARGET
 	}
 	
-	public Camera() {
-		this(20, 5, 0);
-	}
-	public Camera(float pitch, float yaw, float roll) {
-		this.pitch = pitch;
-		this.yaw = yaw;
-		this.roll = roll;
-		mode = Mode.FREELOOK;
-		offset = new Vector(-3,2,6);
+	private Camera() {}
+	
+	public static void init() {
 		zoom = Settings.zoomInit;
+		setFOV(Settings.FOV);
 	}
 	
-	public void setPitch(float pitch) {
-		this.pitch = pitch;
+	public static void setPitch(float pitch) {
+		Camera.pitch = pitch;
 	}
 	
-	public void move() {
+	public static void move() {
 		switch (mode) {
 		case FREELOOK:
-			break;
-		case LOCKED_FOLLOW:
-			/*Vector up;
-			if (target.isAffectedByGravity())
-				up = target.getGravity().setLength(-2);
-			else
-				up = new Vector(0,1,0);
-			Vector current = target.pos.vectorTo(pos);
-			pos = target.pos.add(up).add(current.subtract(current.proj(up)).shortenIfLonger(5));*/
 			break;
 		case TARGET:
 			break;
 		}
 	}
-	public void setTarget(Vector target) {
-	    this.target = target;
+	public static void setTarget(Vector target) {
+	    Camera.target = target;
 	    mode = Mode.TARGET;
 	}
-	public void setMode(Mode mode) {
-		this.mode = mode;
+	public static void setMode(Mode mode) {
+		Camera.mode = mode;
 	}
 	/**
 	 * Set FOV (Field Of View) in degrees.
 	 * @param fov
 	 */
-	public void setFOV(float fov) {
-		this.fovy = fov;
+	public static void setFOV(float fov) {
+		Camera.fovy = fov;
 		realFOV = (float) Math.tan(fovy/360*Math.PI);
 	}
 	/**
 	 * @return The same FOV as set, in degrees.
 	 */
-	public float getFOV() {
+	public static float getFOV() {
 		return fovy;
 	}
-	public void updateTurn(Point mouseMovement) {
-		yaw	  -= (float)mouseMovement.x*Settings.mouseSense;
-		pitch -= (float)mouseMovement.y*Settings.mouseSense;
+	public static void updateTurn(Point mouseMovement) {
+		switch(mode){
+		case TARGET:
+			yaw	  -= (float)mouseMovement.x*Settings.invertTargetX*Settings.mouseSense;
+			pitch += (float)mouseMovement.y*Settings.invertTargetY*Settings.mouseSense;
+			break;
+		case FREELOOK:
+			yaw	  += (float)mouseMovement.x*Settings.invertFreelookX*Settings.mouseSense;
+			pitch += (float)mouseMovement.y*Settings.invertFreelookY*Settings.mouseSense;
+			break;
+		}
 		if (pitch > 90)
 			pitch = 90;
 		else if (pitch < -90)
 			pitch = -90;
 	}
-	public void zoom(float rotation) {
+	public static void zoom(float rotation) {
 		zoom += rotation;
 		if (zoom < Settings.zoomMin)
 			zoom = Settings.zoomMin;
 		else if (zoom > Settings.zoomMax)
 			zoom = Settings.zoomMax;
 	}
-	public void setUpCameraLook() {
+	public static void setUpCameraLook() {
 		Engine.gl.glMatrixMode(GL2.GL_PROJECTION);
 		Engine.gl.glLoadIdentity();
 		Engine.gl.glFrustumf(-realFOV, realFOV, -realFOV*aspect, realFOV*aspect, 1, 10000);
@@ -116,13 +109,32 @@ public class Camera {
 	 * @param width
 	 * @param height 
 	 */
-	public void setAspect(int width, int height) {
-		this.aspect = (float)height/(float)width;
+	public static void setAspect(int width, int height) {
+		Camera.aspect = (float)height/(float)width;
 	}
-	public float getAspect() {
+	public static float getAspect() {
 		return aspect;
 	}
-	public Mode getMode() {
+	public static Mode getMode() {
 		return mode;
 	}
+	
+
+    
+    public static void moveForward(float magnitude)
+    {	
+        // Spherical coordinates maths
+    	
+    	Vector movement = new Vector(magnitude,-magnitude,-magnitude).turn(pitch, yaw);
+        pos.addSelf(movement);
+
+    }
+
+    public static void strafe(float magnitude)
+    {
+    	Vector movement = new Vector(magnitude,-magnitude,-magnitude).turn(0,( yaw-90));
+    	pos.addSelf(movement);
+    }
 }
+
+

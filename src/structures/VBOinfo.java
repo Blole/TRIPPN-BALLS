@@ -8,10 +8,10 @@ public final class VBOinfo {
 	public int chunkSize;
 	
 	public VBOinfo() {}
-	public VBOinfo(int vbo, int ibo, int drawType, int elements) {
-		this.vbo = vbo;
-		this.ibo = ibo;
-		this.indices = elements;
-		this.drawType = drawType;
-	}
+//	public VBOinfo(int vbo, int ibo, int drawType, int elements) {
+//		this.vbo = vbo;
+//		this.ibo = ibo;
+//		this.indices = elements;
+//		this.drawType = drawType;
+//	}
 }

@@ -16,8 +16,8 @@ public class Sun {
 		vbo = ModelLoader.loadStatic("sphere");
 	}
 	public void render() {
-		pitch += 0.1f;
-		yaw += 	1f;
+		pitch = 50f;
+		yaw   = -50f;
 		Engine.gl.glLoadIdentity();
 		Engine.gl.glRotatef(pitch, 1, 0, 0);
 		Engine.gl.glRotatef(yaw, 0, 1, 0);
@@ -29,7 +29,7 @@ public class Sun {
 		Engine.gl.glScalef(20, 20, 20);
 		Engine.gl.glColor3f(1,1,0);
 		Engine.enableOldColoredDrawing(true);
-		Engine.drawVBO(vbo);
+//		Engine.drawVBO(vbo);
 		//Engine.drawNormals(vbo, 200);
 		Engine.enableOldColoredDrawing(false);
 	}

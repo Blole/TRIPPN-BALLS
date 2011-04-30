@@ -1,88 +1,97 @@
 package engine;
-import java.io.File;
-import java.io.FilenameFilter;
+import java.util.HashMap;
 
+import org.luaj.vm2.LuaFunction;
 import org.luaj.vm2.LuaTable;
-import org.luaj.vm2.LuaUserdata;
 import org.luaj.vm2.LuaValue;
+import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.ThreeArgFunction;
 import org.luaj.vm2.lib.TwoArgFunction;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
 import structures.Entity;
-import structures.Events;
+import structures.Doodad;
 import structures.Vector;
 
 
 public class LuaLoader {
-	private static final LuaValue _G = JsePlatform.standardGlobals();
 	private static final LuaTable emt = new LuaTable();
-	private static final LuaValue vmt = new LuaTable();
-	
-
-	public static void main(String[] args) {
-//		metatableEntity = (LuaUserdata)_G.get("luajava").get("newInstance").call(LuaValue.valueOf(Entity.class.getName()));
-//		System.out.println(metatableEntity.metatag(LuaValue.INDEX));
-//		System.out.println(metatableEntity.get("render"));
-		setupMetatables();
-		String luaFile = Settings.doodadDir+"sphere"+Settings.luaEventFile;
-		
-		LuaTable fenv = getFileEnvironment(luaFile).checktable();
-		LuaValue onCollide = getVariable(fenv, "onCollide").checkfunction();
-		
-		Entity e1 = new Entity("LUA_DEBUG", false);
-		Entity e2 = new Entity("LUA_DEBUG", false);
-		e1.pos.set(1,1,1);
-		e2.pos.set(2,2,2);
-		LuaUserdata u1 = LuaValue.userdataOf(e1, emt);
-		LuaUserdata u2 = LuaValue.userdataOf(e2, emt);
-		
-		System.out.println("------------------------------------------------");
-		System.out.println("\t"+luaFile);
-		System.out.println("------------------------------------------------");
-		
-		onCollide.call(u1, u2);
-		
-		System.out.println();
-		System.out.println();
-		System.out.println();
-	}
+	private static final LuaTable vmt = new LuaTable();
+	private static final LuaTable lib = new LuaTable();
+	private static final LuaTable _G = globals();
 	
 	public static void init() {
 		setupMetatables();
+		setupLib();
+		Doodad.globals = globals();
 	}
-	
-	public static Events load(String doodadName) {
-		LuaValue fenv = getFileEnvironment(Settings.doodadDir+doodadName+Settings.luaEventFile);
+
+	public static Doodad getDoodad(String doodadName) {
+		if (!Doodad.doodadClassExists(doodadName)) {
+			LuaTable classTable = new LuaTable();
+			LuaTable fenv = getFileEnvironment(Doodad.globals, Settings.doodadDir+doodadName+Settings.luaEventFile);
+//			LuaTable globals = fenv.get("g");
+			LuaTable funcs = fenv.get("funcs").checktable();
+			Doodad.createDoodadClass(doodadName, funcs);
+//			for (String funcName : Events.mandatoryFunctions) {
+//			LuaValue func = maybeGetFunction(fenv, funcName);
+//			if (func != null)
+//				events.setVar(funcName, func);
+//		}
+			//TODO
+			//there shouldn't be no info.lua file,
+			//everything should be fixed in the onBirth function
+		}
+		return new Doodad(doodadName);
+	}
+
+	private static LuaFunction maybeGetFunction(LuaTable fenv, String varName) {
+		LuaValue var = getVariable(fenv, varName);
+		if (!var.isnil()) {
+			if (var.isfunction())
+				return (LuaFunction) var;
+			else
+				niceError(fenv, varName+" was defined, but not as a function," +
+						"and will therefore not work.", false);
+		}
 		
-		Events events = Events.getNew(doodadName);
-		events.onCollide= getVariable(fenv, "onCollide").checkfunction();
-		events.onStop 	= getVariable(fenv, "onStop").checkfunction();
-		events.onPause 	= getVariable(fenv, "onPause").checkfunction();
-		events.onPlay	= getVariable(fenv, "onPlay").checkfunction();
-		return events;
+		return null;
+	}
+
+	public static void loadInfo(Entity entity, String doodadName) {
+		LuaTable fenv = getFileEnvironment(Doodad.globals, Settings.doodadDir+doodadName+Settings.luaInfoFile);
+		entity.modelName = getVariable(fenv, "model").checkstring().toString();
+		entity.setOwnGravity(getVariable(fenv, "hasOwnGravity").checkboolean());
+		entity.setFreeze(getVariable(fenv, "isFrozen").checkboolean());
+		entity.setSphere(getVariable(fenv, "isSphere").checkboolean());
+		entity.setBoundingRadius((float)getVariable(fenv, "boundingRadius").checkdouble());
+		entity.setMass((float)getVariable(fenv, "mass").checkdouble());
 	}
 	
 	/**
-	 * Get a function from an environment.
-	 * @param fenv Environment to get function from
-	 * @param functionName name of function
+	 * Get a variable from an environment.
+	 * @param fenv Environment to get variable from
+	 * @param varName name of variable
 	 * @return the LuaFunction
 	 */
-	private static LuaValue getVariable(LuaValue fenv, String functionName) {
-		return fenv.get("onCollide");
+	private static LuaValue getVariable(LuaValue fenv, String varName) {
+		return fenv.get(varName);
 	}
 	
 	/**
 	 * Takes a file name and loads tries to load it from
 	 * the doodad directory.
-	 * @param filePath e.g. <code>doodas/sphere/events.lua</code>
+	 * @param filePath e.g. <code>doodads/sphere/events.lua</code>
 	 * @return file's environment
 	 */
-	private static LuaTable getFileEnvironment(String filePath) {
-		LuaValue f = _G.get("loadfile").call(LuaValue.valueOf(filePath));
-		f.call();
-		return f.getfenv().checktable();
+	private static LuaTable getFileEnvironment(LuaTable startingEnv, String filePath) {
+		LuaValue fileFunction = _G.get("loadfile").call(LuaValue.valueOf(filePath));
+		//TODO
+		//fileFunction.setfenv(startingEnv);
+		fileFunction.call();
+		LuaTable fenv = fileFunction.getfenv().checktable();
+		fenv.set("filePath", filePath);
+		return fenv;
 	}
 	
 //	/**
@@ -102,6 +111,80 @@ public class LuaLoader {
 	
 	
 	
+	private static LuaTable globals() {
+		LuaTable _G = JsePlatform.standardGlobals();
+		_G.set("lib", lib);
+		return _G;
+	}
+
+	private static void setupLib() {
+		LuaTable elib = new LuaTable();
+		LuaTable vlib = new LuaTable();
+		lib.set("entity", elib);
+		lib.set("vector", vlib);
+		
+		elib.set("new", new TwoArgFunction() {
+			@Override
+			public LuaValue call(LuaValue doodadName, LuaValue isAnon) {
+				Entity entity = new Entity(checkString(doodadName), isAnon.toboolean());
+				LuaValue luaEntity = toUserdata(entity);
+				return luaEntity;
+			}
+		});
+		elib.set("attach", new TwoArgFunction() {
+			@Override
+			public LuaValue call(LuaValue e1l, LuaValue e2l) {
+				System.out.println("\nattach was called:");
+				_G.foreach(new TwoArgFunction() {
+
+					@Override
+					public LuaValue call(LuaValue k, LuaValue v) {
+						System.out.println(k+"  "+v);
+						return null;
+					}
+					
+				});
+				Entity e1 = getEntity(e1l);
+				Entity e2 = getEntity(e2l);
+				if (!e2.isAnon())
+					niceError(LuaValue.valueOf("sure would be nice to have fenv here..."), String.format(
+							"Tried to attach a non-anon entity, \n%s\n to\n%s",
+							e2, e1), false);
+				else
+					e1.attach(e2);
+				return LuaValue.NIL;
+			}
+		});
+		
+		
+		
+		vlib.set("new", new ThreeArgFunction() {
+			@Override
+			public LuaValue call(LuaValue xl, LuaValue yl, LuaValue zl) {
+				float x = (float) xl.todouble();
+				float y = (float) yl.todouble();
+				float z = (float) zl.todouble();
+				return toUserdata(new Vector(x, y, z));
+			}
+		});
+	}
+
+	protected static String checkString(LuaValue string) {
+		if (string.isstring())
+			return string.toString();
+		else
+			niceError(LuaValue.valueOf("sure would fenv"), "not a string", false);
+		return null;
+	}
+
+	protected static boolean checkBoolean(LuaValue bool) {
+		if (bool.isboolean())
+			return bool.checkboolean();
+		else
+			niceError(LuaValue.valueOf("sure would fenv"), "not a boolean", false);
+		return false;
+	}
+
 	private static void setupMetatables() {
 		emt.set(LuaValue.INDEX, new TwoArgFunction() {
 			@Override
@@ -191,6 +274,16 @@ public class LuaLoader {
 			}
 		});
 	}
+	
+	private static void niceError(LuaValue fenv, String error, boolean crash) {
+		String output = String.format("   Error in %s:\n%s",
+				fenv.get("filePath"), error);
+		if (crash)
+			throw new RuntimeException(output);
+		else
+			Engine.err.println(output);
+	}
+	
 	/**
 	 * @param e
 	 * @return userdata of e with emt as metatable

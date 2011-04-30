@@ -9,6 +9,7 @@ import org.ini4j.Wini;
 public class Settings {
 	public static final String doodadDir = "doodads/";
 	public static final String luaEventFile = "/events.lua";
+	public static final String luaInfoFile = "/info.lua";
 	
 	private static final String settingsFileName = "settings.ini";
 	private static final String constantsFileName = "constants.ini";
@@ -33,6 +34,12 @@ public class Settings {
 	public static float zoomMax = 1000;
 	public static float zoomMin = 2.1f;
 	public static String worldMap = "world.bmp";
+	public static float FOV;
+	public static int invertTargetX;
+	public static int invertTargetY;
+	public static int invertFreelookX;
+	public static int invertFreelookY;
+	public static float gravitationalConstant;
 	
 	public static void loadSettings() {
 		try {
@@ -53,6 +60,12 @@ public class Settings {
 			zoomMin		= settingsIni.get(cameraSection, "zoomMin", float.class);
 			zoomMax		= settingsIni.get(cameraSection, "zoomMax", float.class);
 			worldMap	= settingsIni.get(worldSection,  "map", String.class);
+			invertTargetX	= settingsIni.get(cameraSection, "invertTargetX", boolean.class)?-1:1;
+			invertTargetY	= settingsIni.get(cameraSection, "invertTargetY", boolean.class)?1:-1;
+			invertFreelookX	= settingsIni.get(cameraSection, "invertFreelookX", boolean.class)?-1:1;
+			invertFreelookY	= settingsIni.get(cameraSection, "invertFreelookY", boolean.class)?-1:1;
+			FOV				= settingsIni.get(cameraSection, "FOV", float.class);
+			gravitationalConstant = settingsIni.get(worldSection, "gravitationalConstant", float.class);
 			
 		} catch (InvalidFileFormatException e) {
 			System.out.printf("Settings file '%s' not found.. sort of. Default key binds loaded.", settingsFileName);

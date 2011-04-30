@@ -3,6 +3,7 @@ import java.awt.AWTException;
 import java.awt.Cursor;
 import java.awt.MouseInfo;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.FocusEvent;
@@ -31,19 +32,25 @@ public class Input implements KeyListener, MouseListener, MouseWheelListener, Fo
 	private static final byte firstDelay = 10;
 	private static final byte delay = 1;
 	
-	private boolean[] keyDown = new boolean[526];
-	private byte[]   keyTyped = new byte[526];
-	private boolean focus = false;
-	private Robot robot;
-	private boolean keepMouseCenteredAndHidden;
-	private boolean focusGained;
-	private boolean focusLost;
-	private int wheelRotation = 0;
-	private Point mouseCenter;
-	private Point mousePosBeforeCentering;
+	private static byte[]   keyTyped = new byte[526];
+	private static boolean[] keyDown = new boolean[526];
+	private static boolean[] keyPressed = new boolean[526];
+	private static boolean[] keyReleased = new boolean[526];
+	private static boolean mouseClicked = false;
+	private static boolean focus = false;
+	private static Robot robot;
+	private static boolean keepMouseCenteredAndHidden;
+	private static boolean focusGained;
+	private static boolean focusLost;
+	private static int wheelRotation = 0;
+	private static Point mouseCenter;
+	private static Point mousePosBeforeCentering;
 	private static Cursor noCursor = Toolkit.getDefaultToolkit().createCustomCursor(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB), new java.awt.Point(0,0), "none");
+	public static Input listener;
 	
-	public Input() {
+	private Input() {}
+	
+	public static void init() {
 		try {
 			robot=new Robot();
 		}
@@ -52,8 +59,10 @@ public class Input implements KeyListener, MouseListener, MouseWheelListener, Fo
 		}
 		if (robot==null)
 			System.out.println("Error robot for centering mouse has not been initialized");
+		listener = new Input();
 	}
-	public boolean keyTyped(int keyCode) {
+	
+	public static boolean keyTyped(int keyCode) {
 		if (keyDown[keyCode]) {
 			keyTyped[keyCode]--;
 			if (keyTyped[keyCode] <= 0) {
@@ -66,9 +75,29 @@ public class Input implements KeyListener, MouseListener, MouseWheelListener, Fo
 		}
 		return false;
 	}
-	public boolean keyDown(int keyCode) {
+
+	public static boolean keyPressed(int keyCode) {
+		boolean ret = keyPressed[keyCode];
+		keyPressed[keyCode] = false;
+		return ret;
+	}
+
+	public static boolean keyReleased(int keyCode) {
+		boolean ret = keyReleased[keyCode];
+		keyReleased[keyCode] = false;
+		return ret;
+	}
+	public static boolean keyDown(int keyCode) {
 		return keyDown[keyCode];
 	}
+	public static boolean mouseClick(){
+		return mouseClicked;
+	}
+	
+	
+	
+	
+	
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent wheel) {
 		wheelRotation += wheel.getWheelRotation();
@@ -87,20 +116,24 @@ public class Input implements KeyListener, MouseListener, MouseWheelListener, Fo
 	}
 	@Override
 	public void mousePressed(MouseEvent mouse) {
-		System.out.println(mouse);
+		mouseClicked = true;
 	}
 	@Override
 	public void mouseReleased(MouseEvent mouse) {
-		System.out.println(mouse);
+		mouseClicked = false;
 	}
 	@Override
 	public void keyPressed(KeyEvent key) {
-		keyDown[key.getKeyCode()] = true;
-		keyTyped[key.getKeyCode()] = 0;
+		if (!keyDown[key.getKeyCode()]) {
+			keyTyped[key.getKeyCode()] = 0;
+			keyDown[key.getKeyCode()] = true;
+			keyPressed[key.getKeyCode()] = true;
+		}
 	}
 	@Override
 	public void keyReleased(KeyEvent key) {
 		keyDown[key.getKeyCode()] = false;
+		keyReleased[key.getKeyCode()] = true;
 	}
 	@Override
 	public void keyTyped(KeyEvent key) {
@@ -151,38 +184,38 @@ public class Input implements KeyListener, MouseListener, MouseWheelListener, Fo
 	
 	
 	
-	public boolean focusGained() {
+	public static boolean focusGained() {
 		if (focusGained) {
 			focusGained = false;
 			return true;
 		}
 		return false;
 	}
-	public boolean focusLost() {
+	public static boolean focusLost() {
 		if (focusLost) {
 			focusLost = false;
 			return true;
 		}
 		return false;
 	}
-	public boolean inFocus() {
+	public static boolean inFocus() {
 		return focus;
 	}
-	public int getMouseWheelRotation() {
+	public static int getMouseWheelRotation() {
 		int rotation = wheelRotation;
 		wheelRotation = 0;
 		return rotation;
 	}
-	public void setMouseCenter(Point mouseCenter) {
-		this.mouseCenter = mouseCenter;
+	public static void setMouseCenter(Point mouseCenter) {
+		Input.mouseCenter = mouseCenter;
 	}
-	public void hideCursor(boolean hide) {
+	public static void hideCursor(boolean hide) {
 		if (hide)
 			Engine.getFrame().setCursor(noCursor);
 		else
 			Engine.getFrame().setCursor(Cursor.getDefaultCursor());
 	}
-	public void keepCursorCenteredAndHidden(boolean hide) {
+	public static void keepCursorCenteredAndHidden(boolean hide) {
 		if (hide) {
 			hideCursor(true);
 			if (!keepMouseCenteredAndHidden) {
@@ -197,12 +230,20 @@ public class Input implements KeyListener, MouseListener, MouseWheelListener, Fo
 		}
 		keepMouseCenteredAndHidden = hide;
 	}
-	public Point getMouseMovementAndCenter() {
+	public static Point getMouseMovementAndCenter() {
 		if (keepMouseCenteredAndHidden) {
 			Point mousePos = MouseInfo.getPointerInfo().getLocation();
 			robot.mouseMove(mouseCenter.x, mouseCenter.y);
 			return new Point(mousePos.x-mouseCenter.x, mousePos.y-mouseCenter.y);
 		}
 		return null;
+	}
+	
+	public static Point getRelativeMousePos(){
+		Rectangle bounds = Engine.getAbsoluteCanvasBounds();
+		Point realMousePos = MouseInfo.getPointerInfo().getLocation();
+		realMousePos.x -= bounds.x;
+		realMousePos.y -= bounds.y;
+		return realMousePos;
 	}
 }

@@ -2,6 +2,7 @@ package engine;
 
 import java.awt.Frame;
 import java.awt.GraphicsEnvironment;
+import java.awt.Rectangle;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -10,11 +11,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLEventListener;
 import javax.media.opengl.awt.GLCanvas;
 
+import structures.Entity;
 import structures.VBOinfo;
 
 
@@ -25,13 +28,12 @@ public final class Engine implements GLEventListener {
 	private static final long serialVersionUID = 1L;
 	private static boolean fullscreen=false;
 	private static Frame frame;
-	private Input input;
-	private Game game;
 	public static FPSAnimator animator;
 	private static String title = "";
 	private static float fps;
 	
-	public Random random = new Random();
+	public static Random random = new Random();
+	private static GLCanvas canvas;
 	public static GL2 gl;
 	public static final PrintStream out = System.out;
 	public static final PrintStream err = System.err;
@@ -41,12 +43,13 @@ public final class Engine implements GLEventListener {
 	private static float angle;
 
     public static void main(String[] args) {
+    	LuaLoader.init();
+		Input.init();
     	new Engine();
 	}
     
     public Engine () {
-    	LuaLoader.init();
-		GLCanvas canvas = new GLCanvas();
+		canvas = new GLCanvas();
         frame = new Frame("TRIPPIN' BALLS");
 		frame.add(canvas);
 		frame.setSize(600, 600);
@@ -59,13 +62,12 @@ public final class Engine implements GLEventListener {
         	ge.getDefaultScreenDevice().setFullScreenWindow(frame);
         }
 		
-		input = new Input();
-		frame.addWindowListener(input);
+		frame.addWindowListener(Input.listener);
 		canvas.addGLEventListener(this);
-		canvas.addKeyListener(input);
-		canvas.addMouseListener(input);
-		canvas.addMouseWheelListener(input);
-		canvas.addFocusListener(input);
+		canvas.addKeyListener(Input.listener);
+		canvas.addMouseListener(Input.listener);
+		canvas.addMouseWheelListener(Input.listener);
+		canvas.addFocusListener(Input.listener);
 		animator = new FPSAnimator(canvas, 60);
 		animator.add(canvas);
 		animator.start();
@@ -74,7 +76,7 @@ public final class Engine implements GLEventListener {
 	@Override
 	public void init(GLAutoDrawable drawable) {
 		gl = drawable.getGL().getGL2();
-		
+    	
 		if(!gl.isExtensionAvailable("GL_ARB_vertex_buffer_object"))
 			throw new RuntimeException("Graphics card does not support Vertex Buffer Objects, TERMINATED");
 		
@@ -88,25 +90,25 @@ public final class Engine implements GLEventListener {
 		float mat_specular[] = { 1, 1, 1, 1 };
 	    float mat_shininess[] = { 30 };
 	    float light_position[] = { 20, 20, 20, 0 };
-//	    gl.glMaterialfv(GL2.GL_FRONT, GL2.GL_SPECULAR, mat_specular, 0);
-//	    gl.glMaterialfv(GL2.GL_FRONT, GL2.GL_SHININESS, mat_shininess, 0);
-//	    gl.glMaterialfv(GL2.GL_FRONT, GL2.GL_SHININESS, mat_shininess, 0);
+	    gl.glMaterialfv(GL2.GL_FRONT, GL2.GL_SPECULAR, mat_specular, 0);
+	    gl.glMaterialfv(GL2.GL_FRONT, GL2.GL_SHININESS, mat_shininess, 0);
+	    gl.glMaterialfv(GL2.GL_FRONT, GL2.GL_SHININESS, mat_shininess, 0);
 //	    gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_POSITION, light_position, 0);
 //	    gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_DIFFUSE, light_diffuse, 0)
 	    
-		game=new Game(input);
+    	Game.init();
 	}
 	
 	@Override
 	public void display(GLAutoDrawable drawable) {
-		game.tick();
+		Game.tick();
 		updateFPS();
 		gl.glFlush();
 	}
 	
 	@Override
 	public void reshape(GLAutoDrawable drawable, int topY, int topX, int width, int height) {
-		game.reshape(topX, topY, width, height);
+		Game.reshape(topX, topY, width, height);
 	}
 	
 	public static void setTitle(String title) {
@@ -116,7 +118,8 @@ public final class Engine implements GLEventListener {
 	private static void updateTitle() {
 		long rend = times.get("render").getTimeAndReset();
 		long coll = times.get("collide").getTimeAndReset();
-		frame.setTitle(String.format("TRIPPN' BALLS %2.1f fps   %s   rend:%5.0f%% coll:%5.0f%%", fps, title, 100f*rend/(rend+coll), 100f*coll/(rend+coll)));
+		frame.setTitle(String.format("TRIPPN' BALLS %2.1f fps   %s   rend:%5.0f%% coll:%5.0f%% entities: %d",
+				fps, title, 100f*rend/(rend+coll), 100f*coll/(rend+coll), Entity.all.size()));
 	}
 	
 	private static void updateFPS() {
@@ -159,6 +162,7 @@ public final class Engine implements GLEventListener {
 	public static void drawVBO(VBOinfo vbo) {
 //		gl.glLoadIdentity();
 		//gl.glRotatef(angle+=150f,0,1,0);
+		gl.glColor3f(0,1,0);
 		gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, vbo.ibo);
 		gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, vbo.vbo);
 		gl.glVertexPointer(3,	GL2.GL_FLOAT, vbo.chunkSize, 0);
@@ -256,5 +260,12 @@ public final class Engine implements GLEventListener {
 				System.out.printf("%5d",ib.get());
 			System.out.println();
 		}
+	}
+
+	public static Rectangle getAbsoluteCanvasBounds() {
+		Rectangle bounds = canvas.getBounds();
+		bounds.x += frame.getX();
+		bounds.y += frame.getY();
+		return bounds;
 	}
 }
