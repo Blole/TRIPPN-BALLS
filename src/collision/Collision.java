@@ -10,41 +10,6 @@ import structures.Entity;
  *
  */
 public class Collision {
-	
-//	/**
-//	 * 
-//	 * @author Jacob
-//	 *
-//	 */
-//	private final class TestCase {
-//		public final int ID;
-//		
-//		public TestCase(Entity k, Entity p){
-//			if(k.isSphere == true && p.isSphere == true)
-//				ID = 1;
-//			else if(k.isSphere == true && p.isSphere == false || k.isSphere == false && p.isSphere == true)
-//				ID = 2;
-//			else
-//				ID = 3;
-//		}
-//		@Override
-//		public int hashCode(){
-//			return ID;
-//		}
-//	
-//	}
-	//A map of all the tests for the different collisions.
-//	private HashMap<Integer,Test> TestCases = new HashMap<Integer,Test>();
-	public Collision(){
-//		TestCase c = new TestCase(new Entity("sphere"), new Entity("sphere"));
-//		float[][] k = {{1},{1},{1}};
-////		TestCase b = new TestCase(new Sphere(new Vector(0,0,0)), new Polygon(new Vector(0,0,0),k));
-//		TestCases.put(c.hashCode(), new MovingSphereSphere());
-////		TestCases.put(b.hashCode(), new SpherePolygonTest());
-	}
-	
-	
-
 	/**
 	 * Loops through every collidable object in Objects.
 	 * For every object encountered it checks if it is
@@ -85,7 +50,7 @@ public class Collision {
 //					CollisionData d = TestCases.get(c.hashCode()).run(k,p); //Find the test.
 					if(e1.isSphere() && e2.isSphere()){
 						MovingSphereSphere test = new MovingSphereSphere();
-						collData = test.testMovingSphereSphere(e1, e2, e1.speed,e2.speed);
+						collData = test.testMovingSphereSphere(e1, e2);
 					}
 					
 //					System.out.println((d));

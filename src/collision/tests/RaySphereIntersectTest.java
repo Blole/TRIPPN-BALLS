@@ -4,14 +4,21 @@ import structures.Entity;
 import structures.Vector;
 import collision.CollisionData;
 
+/**
+ * Test for finding intersection between a ray, basiaclly a vector, and a sphere.
+ * Oringinal test written by Christer Ericson in Real time collision detection,
+ * this is an implementation in java.
+ * @author Jacob Norlin Andersson.
+ *
+ */
 public class RaySphereIntersectTest {
 	/**
-	 * Intersects rayr=p+td,|d|=1, with sphere s and, if intersecting,
-	 * returns t value of intersection and intersection point q
-	 * @param p
-	 * @param d
-	 * @param s
-	 * @return
+	 * Intersects a ray with a sphere and returns a CollisionData with the
+	 * results.
+	 * @param p First point on the ray.
+	 * @param d Second point on the ray.
+	 * @param s The sphere.
+	 * @return CollisionData containing point of impact time and if there was a collision.
 	 */
 	public CollisionData IntersectRaySphere(Vector p, Vector k, Entity s)
 	{
@@ -42,6 +49,15 @@ public class RaySphereIntersectTest {
 		return rData;
 	}
 	
+	/**
+	 * Faster version of finding if a ray intersects a sphere, only
+	 * finds if it is intersecting and does not calculate any data
+	 * that might not be needed.
+	 * @param p First point on the ray.
+	 * @param d Second point on the ray.
+	 * @param s The sphere.
+	 * @return True or false.
+	 */
 	public boolean TestRaySphere(Vector p, Vector k, Entity s){
 		
 		Vector d = p.vectorTo(k).unit();

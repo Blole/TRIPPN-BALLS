@@ -5,49 +5,103 @@ import javax.media.opengl.GL2;
 
 import structures.Vector;
 
-
+/**
+ * 
+ * The camera class represents the in game camera.
+ * 
+ * @author Björn Holm and Jacob Norlin Andersson.
+ *
+ */
 public class Camera {
+	
+	/**
+	 * The cameras pitch.
+	 */
 	public static float pitch;
+	
+	/**
+	 * The cameras yaw.
+	 */
 	public static float yaw;
+	
+	/**
+	 * The cameras roll.
+	 */
 	public static float roll;
+	
+	/**
+	 * The cameras current focused target.
+	 */
 	public static Vector target;
+	
+	/**
+	 * The cameras zoom.
+	 */
 	private static float zoom;
+	
+	/**
+	 * The cameras viewing mode, i.e FREELOOK or TARGET.
+	 */
 	private static Mode mode;
+	
+	/**
+	 * The cameras aspect ratio.
+	 */
 	private static float aspect;
+	
+	/**
+	 * The cameras field of view.
+	 */
 	private static float fovy;
 	private static float realFOV;
+	
+	/**
+	 * The cameras current position.
+	 */
 	public static final Vector pos = new Vector(0,0,0);
 	
 	public static enum Mode {
 		FREELOOK, TARGET
 	}
 	
+	/**
+	 * Contructs a Camera.
+	 */
 	private Camera() {}
 	
+	/**
+	 * Initializes the camera with settings given in Settings.ini .
+	 */
 	public static void init() {
 		zoom = Settings.zoomInit;
 		setFOV(Settings.FOV);
 	}
 	
+	/**
+	 * Sets the pitch of the camera.
+	 * @param pitch New pitch;
+	 */
 	public static void setPitch(float pitch) {
 		Camera.pitch = pitch;
 	}
 	
-	public static void move() {
-		switch (mode) {
-		case FREELOOK:
-			break;
-		case TARGET:
-			break;
-		}
-	}
+	/**
+	 * Sets the target which the camera focuses.
+	 * @param target New target.
+	 */
 	public static void setTarget(Vector target) {
 	    Camera.target = target;
 	    mode = Mode.TARGET;
 	}
+	
+	/**
+	 * Sets the viewing mode of the camera.
+	 * @param mode New mode, FREELOOK or TARGET.
+	 */
 	public static void setMode(Mode mode) {
 		Camera.mode = mode;
 	}
+	
 	/**
 	 * Set FOV (Field Of View) in degrees.
 	 * @param fov
@@ -56,12 +110,18 @@ public class Camera {
 		Camera.fovy = fov;
 		realFOV = (float) Math.tan(fovy/360*Math.PI);
 	}
+	
 	/**
 	 * @return The same FOV as set, in degrees.
 	 */
 	public static float getFOV() {
 		return fovy;
 	}
+	
+	/**
+	 * Updates the cameras view in relation to the movement of the mouse.
+	 * @param mouseMovement How the mouse has moved.
+	 */
 	public static void updateTurn(Point mouseMovement) {
 		switch(mode){
 		case TARGET:
@@ -78,6 +138,11 @@ public class Camera {
 		else if (pitch < -90)
 			pitch = -90;
 	}
+	
+	/**
+	 * Changes the zoom of the camera.
+	 * @param rotation New zoom.
+	 */
 	public static void zoom(float rotation) {
 		zoom += rotation;
 		if (zoom < Settings.zoomMin)
@@ -85,6 +150,11 @@ public class Camera {
 		else if (zoom > Settings.zoomMax)
 			zoom = Settings.zoomMax;
 	}
+	
+	/**
+	 * Sets up the camera in openGL creating the frustum matrix and allows
+	 * for the user to actually see.
+	 */
 	public static void setUpCameraLook() {
 		Engine.gl.glMatrixMode(GL2.GL_PROJECTION);
 		Engine.gl.glLoadIdentity();
@@ -112,15 +182,27 @@ public class Camera {
 	public static void setAspect(int width, int height) {
 		Camera.aspect = (float)height/(float)width;
 	}
+	
+	/**
+	 * @return The current aspect.
+	 */
 	public static float getAspect() {
 		return aspect;
 	}
+	
+	/**
+	 * @return The current viewing mode.
+	 */
 	public static Mode getMode() {
 		return mode;
 	}
 	
 
-    
+	/**
+	 * Calculates and moves the camera in relation to its own position and viewing
+	 * point, so that it can be moved in a first person perspective.
+	 * @param magnitude Distance moved.
+	 */
     public static void moveForward(float magnitude)
     {	
         // Spherical coordinates maths
@@ -130,6 +212,10 @@ public class Camera {
 
     }
 
+    /**
+     * Moves the camera sideways.
+     * @param magnitude Distance moved.
+     */
     public static void strafe(float magnitude)
     {
     	Vector movement = new Vector(magnitude,-magnitude,-magnitude).turn(0,( yaw-90));

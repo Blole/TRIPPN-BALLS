@@ -6,8 +6,22 @@ import java.io.IOException;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
+/**
+ * The class handles the settings for the program which are defined in
+ * the Settings.ini or Constants.ini file. Both input keys and relevant options 
+ * are inside the file. Constants has values regarding calculations made in the 
+ * program.
+ * @author Björn Holm.
+ *
+ */
 public class Settings {
+	
+	/*
+	 * These should all be self explanatory.
+	 */
 	public static final String doodadDir = "doodads/";
+	public static final String luaEventFile = "/events.lua";
+	public static final String luaInfoFile = "/info.lua";
 	
 	private static final String settingsFileName = "settings.ini";
 	private static final String constantsFileName = "constants.ini";
@@ -39,6 +53,9 @@ public class Settings {
 	public static int invertFreelookY;
 	public static float gravitationalConstant;
 	
+	/**
+	 * The method loads the settings from Settings.ini and Constants.ini
+	 */
 	public static void loadSettings() {
 		try {
 			constantsIni = new Wini(new File(constantsFileName));
@@ -52,6 +69,7 @@ public class Settings {
 			down		= loadKeyBind("down");
 			menu		= loadKeyBind("menu");
 			mouseSense	= settingsIni.get(mouseSection, "mouseSense", float.class);
+			System.out.println(settingsIni.get(cameraSection, "mouseSense", float.class));
 			zoomStep	= settingsIni.get(cameraSection, "zoomStep", float.class);
 			zoomInit	= settingsIni.get(cameraSection, "zoomInit", float.class);
 			zoomMin		= settingsIni.get(cameraSection, "zoomMin", float.class);
@@ -72,7 +90,11 @@ public class Settings {
 			e.printStackTrace();
 		}
 	}
-
+	/**
+	 * Loads the corresponding key from the corresponding file.
+	 * @param key The desired value.
+	 * @return
+	 */
 	private static int loadKeyBind(String key) {
 		return constantsIni.get("KeyEvent", "VK_"+settingsIni.get(keyBindSection, key , String.class), int.class);
 	}

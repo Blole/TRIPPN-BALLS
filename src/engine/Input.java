@@ -18,7 +18,13 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 
-
+/**
+ * System for handling all the input data given by the user to the program.
+ * Implements a number of interfaces that listen for input. At each input
+ * found it runs a method corresponding to that input.
+ * @author Björn Holm and Jacob Norlin Andersson.
+ *
+ */
 public class Input implements KeyListener, MouseListener, MouseWheelListener, FocusListener, WindowListener {
 	/*
 	 * Delay, in frames (for now), between the first

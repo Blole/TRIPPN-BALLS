@@ -3,16 +3,23 @@ package collision.tests;
 import structures.Vector;
 import collision.CollisionData;
 
+/**
+ * Test for finding intersection between a line segment and a cylinder. Original
+ * test written by Christer Ericson in Real Time Collision Detection, this is an
+ * implementation in java.
+ * @author Jacob Norlin Andersson.
+ *
+ */
 public class IntersectSegmentCylinderTest {
+	
 	/**
 	 *  Intersect segment S(t)=sa+t(sb-sa), 0<=t<=1 against cylinder specified by p, q and r.
-	 *  Test written in C by Christer Ericson in Real Time Collision Detection.
-	 * @param sa
-	 * @param sb
-	 * @param p
-	 * @param q
-	 * @param r
-	 * @return
+	 * @param sa First point.
+	 * @param sb Second point.
+	 * @param p First point in cylinder.
+	 * @param q Second point in cylinder.
+	 * @param r Cylinder radius.
+	 * @return CollisionData containing point of impact, time of impact and if there was a collision.
 	 */
 	public CollisionData IntersectSegmentCylinder(Vector sa, Vector sb, Vector p, Vector q, float r)
 	{

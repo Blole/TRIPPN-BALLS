@@ -3,16 +3,29 @@ package engine;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Point2D;
+import java.util.List;
 
 import javax.media.opengl.GL2;
 
+import collision.CollisionData;
 import collision.tests.RaySphereIntersectTest;
 import structures.Entity;
 import structures.Vector;
 
+/**
+ * System for selecting objects while in game.
+ * @author Björn Holm and Jacob Norlin Andersson
+ *
+ */
 public class Selection {
 
-	
+	/**
+	 * Throws a ray which is checked for intersection against each
+	 * object in the world to see if the mouse is on top of an 
+	 * object.
+	 * @param pitch
+	 * @param yaw
+	 */
 	public void findTarget(float pitch, float yaw){
 		
 		pitch += Camera.pitch;
@@ -64,11 +77,18 @@ public class Selection {
 		}
 	}
 	
+	/**
+	 * If the mouse is on an object this method is called.
+	 * @param entity
+	 */
 	public void onOver(Entity entity){
 		System.out.println("		COOLT GRABBEN");
 //		Camera.setTarget(smek.pos);
 	}
 	
+	/**
+	 * Converts the mouse position to be able to find a target.
+	 */
 	public void findMouseTarget(){
 		Point mousePos = Input.getRelativeMousePos();
 		Rectangle bounds = Engine.getAbsoluteCanvasBounds();

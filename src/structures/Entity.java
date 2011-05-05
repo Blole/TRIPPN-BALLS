@@ -1,19 +1,18 @@
 package structures;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import collision.CollisionData;
 
 import engine.Engine;
+import engine.LuaLoader;
 import engine.ModelLoader;
 import engine.Settings;
 
 public class Entity {
 	public static final List<Entity> all = new ArrayList<Entity>();
-	public static final Set<Entity> hasGravity = new HashSet<Entity>();
+	public static final List<Entity> hasGravity = new ArrayList<Entity>();
 	
 	public Doodad doodad;
 	private List<Entity> children = new ArrayList<Entity>();
@@ -23,46 +22,70 @@ public class Entity {
 	private boolean isAnon = false;
 	private boolean isSphere = false;
 	
-	private String modelName;
+	private String doodadName;
+	public String modelName;
 	public final Vector speed = new Vector(0,0,0);
 	public final Vector pos = new Vector(0,0,0);
 	
-	private float boundingRadius = 1;
+	private float boundingRadius = 1; //This is temporary, should be calculated.
 	private float mass = 1;
 	private VBOinfo vbo;
 	private Entity father;
 	public float[] tint = new float[]{1,1,1};
 	
-	public Entity (String doodadName) {
-		doodad = new Doodad(doodadName, this);
+	/**
+	 * Constructs an entity from doodadName and if the entity is
+	 * anonymous or not.
+	 * @param doodadName Name of the entity in the LUA files.
+	 * @param isAnon If the entity is anonymous or not.
+	 */
+	public Entity (String doodadName, boolean isAnon) {
+		this.doodadName = doodadName;
+		this.isAnon = isAnon;
+		loadEverything(doodadName);
+		if (!isAnon)
+			Entity.all.add(this);
 		tint[0] = Engine.random.nextInt()%250;
 		tint[1] = Engine.random.nextInt()%250;
 		tint[2] = Engine.random.nextInt()%250;
+	}
+
+	/**
+	 * Loads the LUAfile corresponding to the entity's doodadName.
+	 * @param doodadName
+	 */
+	private void loadEverything(String doodadName) {
+		LuaLoader.loadInfo(this, doodadName);
+		doodad = LuaLoader.getDoodad(doodadName);
+		vbo = ModelLoader.loadStatic(modelName);
 		doodad.call("onBirth");
-		all.add(this);
 	}
 	
-//	private void loadEverything(String doodadName) {
-//		LuaLoader.loadInfo(this, doodadName);
-//		doodad = LuaLoader.getDoodad(doodadName);
-//		vbo = ModelLoader.loadStatic(modelName);
-//		doodad.call("onBirth");
-//	}
-	
+	/**
+	 * Uses openGL to draw the entity.
+	 */
 	public void render() {
 		Engine.gl.glPushMatrix();
 		Engine.gl.glColor3fv(tint, 0);
 		Engine.gl.glTranslatef(pos.x, pos.y, pos.z);
-		if (vbo != null)
-			Engine.drawVBO(vbo);
+		Engine.drawVBO(vbo);
 		for (Entity child : children)
 			child.render();
 		Engine.gl.glPopMatrix();
 	}
 	
+	/**
+	 * Moves the entity by its current speed vector.
+	 */
 	public void move() {
 		pos.addSelf(speed);
 	}
+	
+	/**
+	 * Deals with the physics of a collision and the special onCollide
+	 * function defined within the entitys doodad file.
+	 * @param d The CollisionData.
+	 */
 	public void collide(CollisionData d){
 		Entity other = d.other;
 		
@@ -87,8 +110,13 @@ public class Entity {
 		other.speed.subtractSelf(toMe);
 		other.speed.addSelf(toOther);
 		speed.subtractSelf(toOther);
-		doodad.pushCall("onCollide", this.doodad.getUserdata(), other.doodad.getUserdata());
+		doodad.pushCall("onCollide", LuaLoader.toUserdata(this), LuaLoader.toUserdata(other));
 	}
+	
+	/**
+	 * Deals with the gravitational physics of the world.
+	 * @param other Other entity it calculates gravity towards.
+	 */
 	public void attract(Entity other) {
 		Vector vectorBetween = pos.vectorTo(other.pos);
 		
@@ -108,9 +136,15 @@ public class Entity {
 		}
 	}
 	
+	/**
+	 * Attaches an anonymous entity to this entity.
+	 * @param anonEntity Other entity.
+	 */
 	public void attach(Entity anonEntity) {
 		if (!anonEntity.isAnon())
-			anonEntity.setAnon(true);
+			throw new RuntimeException(String.format(
+					"Entity %s is not anonymous and can therefore not be attached to %s",
+					anonEntity, this));
 		children.add(anonEntity);
 		anonEntity.setFather(this);
 	}
@@ -118,60 +152,66 @@ public class Entity {
 	/*
 	 * Sets
 	 */
+	
+	/**
+	 * Sets a father of the entity.
+	 */
 	private void setFather(Entity father) {
 		this.father = father;
 	}
+	
+	/**
+	 * Sets the entitys mass.
+	 * @param mass New mass.
+	 */
 	public void setMass(float mass) {
 		this.mass = mass;
 	}
+	
+	/**
+	 * Sets the boundingradius of the entity.
+	 * @param radius New radius.
+	 */
 	public void setBoundingRadius(float radius) {
 		this.boundingRadius = radius;
 	}
-	public void setKill() {
+	
+	/**
+	 * Kills the entity. Will run its onDestroy defined in the doodad.
+	 */
+	public void kill() {
 		doodad.pushCall("onDestroy");
-	}
-	public void setVbo(VBOinfo vbo) {
-		this.vbo = vbo;
-	}
-	public void setModel(String modelName) {
-		this.modelName = modelName;
-		vbo = ModelLoader.loadStatic(modelName);
 	}
 	/*
 	 * Gets
 	 */
+	
+	/**
+	 * Returns the entitys father.
+	 */
 	public Entity getFather() {
 		return father;
 	}
+	
+	/**
+	 * Returns the entitys mass.
+	 * @return The entitys mass.
+	 */
 	public float getMass() {
 		return mass;
 	}
+	
+	/**
+	 * Returns the entitys boundingradius.
+	 * @return The entitys boundingradius.
+	 */
 	public float getBoundingRadius() {
 		return boundingRadius;
-	}
-	public String getModel() {
-		return modelName;
 	}
 	
 	/*
 	 * Set information booleans
 	 */
-	public Entity setFrozen(boolean frozen) {
-		isFrozen = frozen;
-		return this;
-	}
-	public Entity setAnon(boolean isAnon) {
-		this.isAnon = isAnon;
-		if (isAnon)
-			Entity.all.remove(this);
-		else
-			Entity.all.add(this);
-		return this;
-	}
-	public Entity setSphere(boolean isSphere) {
-		this.isSphere = isSphere;
-		return this;
-	}
 	public Entity setOwnGravity(boolean hasOwnGravity) {
 		if (hasOwnGravity) {
 			if (!Entity.hasGravity.contains(this)) {
@@ -185,9 +225,28 @@ public class Entity {
 		}
 		return this;
 	}
+	
+	/**
+	 * Makes the object immobile.
+	 * @param freeze True or false.
+	 * @return This.
+	 */
+	public Entity setFreeze(boolean freeze) {
+		isFrozen = freeze;
+		return this;
+	}
+	
+	/**
+	 * Will make the object regarded as a sphere.
+	 * @param isSphere True or false.
+	 */
+	public void setSphere(boolean isSphere) {
+		this.isSphere = isSphere;
+	}
 	/*
 	 * Information booleans
 	 */
+	
 	public boolean isFrozen() {
 		return isFrozen;
 	}
@@ -202,6 +261,7 @@ public class Entity {
 	}
 	@Override
 	public String toString() {
-		return "Entity: "+"<doodad should be here>"+"   model: "+modelName;
+		return "Entity: "+doodadName+"   model: "+modelName;
 	}
+
 }

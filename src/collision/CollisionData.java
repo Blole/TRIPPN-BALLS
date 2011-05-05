@@ -18,14 +18,20 @@ public class CollisionData {
 	public boolean collision; //Used to find if a collision took place.
 	public Entity other;
 	
-	
+	/**
+	 * Constructs a CollisionData object with the given values.
+	 * @param b Did i find a collision?
+	 * @param t Time of the collision along the speed vector
+	 * @param v Point of collision
+	 */
 	public CollisionData(boolean b, float t, Vector v){
 		this.t = t;
 		intersectionPoint = v;
 		collision = b;
 	}
 	/**
-	 * Standard empty data constructor.
+	 * Constructs a CollisionData object with collision = false, t=-1 and 
+	 * intersectionPoint = null;
 	 */
 	public CollisionData(){
 		t = -1;
