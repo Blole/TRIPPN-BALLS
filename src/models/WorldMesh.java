@@ -108,8 +108,6 @@ public final class WorldMesh {
 				0, GL2.GL_RGB, GL2.GL_UNSIGNED_BYTE, map.getPixels());
 		Engine.gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_LINEAR);
 		Engine.gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_LINEAR);
-		
-		Engine.setTitle(String.format("%d Points:", vbo.indices));
 	}
 
     private float pointHeight(int x, int z) {

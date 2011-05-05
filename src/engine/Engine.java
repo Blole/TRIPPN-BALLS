@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLEventListener;
@@ -39,12 +38,12 @@ public final class Engine implements GLEventListener {
 	public static final PrintStream err = System.err;
 	
 	public static Map<String, TimeThing> times = new HashMap<String, TimeThing>();
-	public static Stopwatch renderingTime = new Stopwatch();
-	private static float angle;
 
     public static void main(String[] args) {
+		Settings.loadSettings();
     	LuaLoader.init();
 		Input.init();
+		Camera.init();
     	new Engine();
 	}
     
@@ -91,7 +90,6 @@ public final class Engine implements GLEventListener {
 	    float mat_shininess[] = { 30 };
 	    float light_position[] = { 20, 20, 20, 0 };
 	    gl.glMaterialfv(GL2.GL_FRONT, GL2.GL_SPECULAR, mat_specular, 0);
-	    gl.glMaterialfv(GL2.GL_FRONT, GL2.GL_SHININESS, mat_shininess, 0);
 	    gl.glMaterialfv(GL2.GL_FRONT, GL2.GL_SHININESS, mat_shininess, 0);
 //	    gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_POSITION, light_position, 0);
 //	    gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_DIFFUSE, light_diffuse, 0)

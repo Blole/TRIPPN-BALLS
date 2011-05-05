@@ -22,7 +22,7 @@ public final class ModelLoader {
 		if (load != null)
 			return load;
 		
-		if (name.equals("sphere"))
+		if (name.equals("Sphere"))
 			load = sphere();
 		else
 			throw new RuntimeException(String.format("Error loading model %s, not found", name));

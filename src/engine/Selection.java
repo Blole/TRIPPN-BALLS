@@ -3,11 +3,9 @@ package engine;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Point2D;
-import java.util.List;
 
 import javax.media.opengl.GL2;
 
-import collision.CollisionData;
 import collision.tests.RaySphereIntersectTest;
 import structures.Entity;
 import structures.Vector;
