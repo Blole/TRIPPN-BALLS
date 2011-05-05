@@ -13,7 +13,6 @@ import structures.Doodad;
 import structures.Entity;
 import structures.Vector;
 
-
 public final class Game {
 	private static final Vector groundGravity = new Vector(0,-0.02f,0);
 	private static Entity me;

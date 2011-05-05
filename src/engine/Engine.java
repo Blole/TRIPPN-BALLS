@@ -23,6 +23,10 @@ import structures.VBOinfo;
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opengl.util.FPSAnimator;
 
+/**
+ * A class who everybody can access directly and make it draw a vbo, or
+ * get the OpenGL variable gl and draw a triangle or whatever.
+ */
 public final class Engine implements GLEventListener {
 	private static final long serialVersionUID = 1L;
 	private static boolean fullscreen=false;

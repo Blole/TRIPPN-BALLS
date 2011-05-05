@@ -15,6 +15,13 @@ import structures.Entity;
 import structures.Vector;
 
 
+/**
+ * An class only used by Doodad for loading the actual classTables
+ * from files in the doodad directory.
+ * 
+ * @see LuaLoader#getClassTable
+ * @author Björn
+ */
 public class LuaLoader {
 	private static final LuaTable classTables = new LuaTable();
 	private static LuaValue defaultClassTable = LuaValue.NIL;
@@ -35,6 +42,14 @@ public class LuaLoader {
 		setupDefaultClassTable();
 	}
 	
+	/**
+	 * Takes the name of a doodad class and tries to load it from the
+	 * doodad directory.
+	 * @param doodadClassName
+	 * @return Either the class table for the specified class, or an
+	 * empty one inheriting default.lua if there were any errors getting
+	 * the wanted one.
+	 */
 	public static LuaTable getClassTable(String doodadClassName) {
 		return classTables.get(doodadClassName).checktable();
 	}
@@ -147,7 +162,7 @@ public class LuaLoader {
 	 * @param v
 	 * @return userdata of v with vmt as metatable
 	 */
-	public static LuaValue toUserdata(Vector v) {
+	private static LuaValue toUserdata(Vector v) {
 		return LuaValue.userdataOf(v, vmt);
 	}
 	/**
@@ -346,6 +361,11 @@ public class LuaLoader {
 					vector.z = (float) value.checkdouble();
 				else if (key.equals("z"))
 					vector.z = (float) value.checkdouble();
+				else if (key.equals("length"))
+					vector.setLengthSelf(value.tofloat()); 
+				else
+					Engine.err.printf("Tried to set a vector variable %s, which is unknown.",
+							luaKey.tojstring());
 				return value;
 			}
 		});
@@ -360,15 +380,15 @@ public class LuaLoader {
 		vmt.set(LuaValue.SUB, new TwoArgFunction() {
 			@Override
 			public LuaValue call(LuaValue luaV, LuaValue luaU) {
-				Vector v = (Vector) luaV.checkuserdata(Vector.class);
-				Vector u = (Vector) luaU.checkuserdata(Vector.class);
+				Vector v = getVector(luaV);
+				Vector u = getVector(luaU);
 				return toUserdata(v.subtract(u));
 			}
 		});
 		vmt.set(LuaValue.MUL, new TwoArgFunction() {
 			@Override
 			public LuaValue call(LuaValue luaV, LuaValue luaF) {
-				Vector v = (Vector) luaV.checkuserdata(Vector.class);
+				Vector v = getVector(luaV);
 				float f = (float) luaF.checkdouble();
 				return toUserdata(v.multiply(f));
 			}
@@ -376,7 +396,7 @@ public class LuaLoader {
 		vmt.set(LuaValue.DIV, new TwoArgFunction() {
 			@Override
 			public LuaValue call(LuaValue luaV, LuaValue luaF) {
-				Vector v = (Vector) luaV.checkuserdata(Vector.class);
+				Vector v = getVector(luaV);
 				float f = (float) luaF.checkdouble();
 				return toUserdata(v.multiply(1/f));
 			}

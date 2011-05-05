@@ -1,4 +1,5 @@
 print(class.path.." loading")
+class.angle = 0
 
 function class:onBirth()
 	self.model = "Sphere"
@@ -13,14 +14,18 @@ end
 function class:onCollide(other)
 	self.fertile = false
 	other.fertile = false
+	self.speed = lib.vector.new(0,0,0)
+	other.speed = lib.vector.new(0,0,0)
 end
 
 function class:onGroundCollide()
 	if self.fertile then
-		self.speed = lib.vector.new(0,0,0)
 		
 		new = lib.entity.new("Sphere")
-		new.pos = self.pos + lib.vector.new(0,2,-2)
-		new.speed = lib.vector.new(0,0.2,-0.2)
+		new.angle = self.angle + 0.2
+		new.pos = self.pos + lib.vector.new(0,2,0)
+		new.speed = lib.vector.new(math.sin(new.angle),0.2,math.cos(new.angle))
+		new.speed.length = 0.2
+		self.speed = lib.vector.new(0,0,0)
 	end
 end

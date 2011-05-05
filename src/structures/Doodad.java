@@ -11,6 +11,19 @@ import org.luaj.vm2.Varargs;
 import engine.Engine;
 import engine.LuaLoader;
 
+/**
+ * A structure for holding a Lua representation of an entity
+ * and enable calling the associated functions specified in
+ * the doodadClassName.lua file.
+ * 
+ * After getting a new Doodad object, one may call the lua
+ * functions of it through the methods call or push a call
+ * onto a queue for later execution. This can be useful when,
+ * for example, a script creates new entities while java is
+ * already iterating over the already existing ones.
+ * 
+ * @author Björn
+ */
 public class Doodad {
 	private static final Queue<DelayedCall> callQueue = new LinkedList<DelayedCall>();
 	private LuaValue self;
