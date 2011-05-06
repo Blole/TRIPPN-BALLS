@@ -1,110 +1,99 @@
 package structures;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 
+import engine.Engine;
+import engine.LuaLoader;
+
+/**
+ * A structure for holding a Lua representation of an entity
+ * and enable calling the associated functions specified in
+ * the doodadClassName.lua file.
+ * 
+ * After getting a new Doodad object, one may call the lua
+ * functions of it through the methods call or push a call
+ * onto a queue for later execution. This can be useful when,
+ * for example, a script creates new entities while java is
+ * already iterating over the already existing ones.
+ * 
+ * @author Björn
+ */
 public class Doodad {
-	private static final HashMap<String, LuaTable> doodadClasses = new HashMap<String, LuaTable>();
-	private static final Queue<Call> callQueue = new LinkedList<Call>();
-	public static LuaTable globals;
-	
-	private LuaTable userVars;
-	private HashMap<String, LuaValue> mandatoryFuncs = new HashMap<String, LuaValue>();
-	
-	public Doodad(String doodadClass) {
-		LuaTable mt = doodadClasses.get(doodadClass);
-		if (mt == null)
-			throw new RuntimeException("Error instantiating "+doodadClass+", class not yet created.");
-		userVars = new LuaTable();
-		userVars.setmetatable(mt);
+	private static final Queue<DelayedCall> callQueue = new LinkedList<DelayedCall>();
+	private LuaValue self;
+
+	public Doodad(String doodadClassName, Entity entity) {
+		LuaTable classTable = LuaLoader.getClassTable(doodadClassName);
+		self = LuaLoader.toUserdata(entity, classTable);
 	}
 	
-	public static boolean doodadClassExists(String doodadName) {
-		return doodadClasses.containsKey(doodadName);
-	}
-	
-	public static void createDoodadClass(String doodadName, LuaTable classTable) {
-		classTable.set(LuaValue.INDEX, classTable);
-		doodadClasses.put(doodadName, classTable);
+	/**
+	 * @return A userdata reflection of the entity, with metatable and everything.
+	 */
+	public LuaValue getUserdata() {
+		return self;
 	}
 	
 	public static void executeQueue() {
-//		System.out.println(callQueue.size());
 		while (!callQueue.isEmpty())
 			callQueue.poll().execute();
 	}
 	
-	public void setVar(String funcName, LuaValue func) {
-		mandatoryFuncs.put(funcName, func);
+	public LuaValue call(String funcName) {
+		return safeCall(funcName, LuaValue.NONE);
 	}
-
-	public LuaValue getVar(String key) {
-		return mandatoryFuncs.get(key);
+	public LuaValue call(String funcName, LuaValue arg0) {
+		return safeCall(funcName, arg0);
 	}
-
-	public LuaTable getCopyOfUserVars() {
-		//TODO
-		return userVars; // should be a copy!!!!!!!!!!!!!!
-	}
-
-	public void call(String funcName) {
-		LuaValue func = getVar(funcName);
-		if (func != null)
-			func.call();
-	}
-	public void call(String funcName, LuaValue arg0) {
-		LuaValue func = getVar(funcName);
-		if (func != null)
-			func.call(arg0);
-	}
-	public void call(String funcName, LuaValue arg0, LuaValue arg1) {
-		LuaValue func = getVar(funcName);
-		if (func != null)
-			func.call(arg0, arg1);
-	}
-	public void call(String funcName, LuaValue arg0, LuaValue arg1, LuaValue arg2) {
-		LuaValue func = getVar(funcName);
-		if (func != null)
-			func.call(arg0, arg1, arg2);
+	public LuaValue call(String funcName, LuaValue arg0, LuaValue arg1) {
+		return safeCall(funcName, LuaValue.varargsOf(arg0, arg1));
 	}
 	public void pushCall(String funcName) {
-		LuaValue func = getVar(funcName);
-		if (func != null)
-			new Call(func, null);
+		new DelayedCall(funcName, LuaValue.NONE);
 	}
 	public void pushCall(String funcName, LuaValue arg0) {
-		LuaValue func = getVar(funcName);
-		if (func != null)
-			new Call(func, arg0);
+		new DelayedCall(funcName, arg0);
 	}
 	public void pushCall(String funcName, LuaValue arg0, LuaValue arg1) {
-		LuaValue func = getVar(funcName);
-		if (func != null)
-			new Call(func, LuaValue.varargsOf(arg0, arg1));
+		new DelayedCall(funcName, LuaValue.varargsOf(arg0, arg1));
 	}
 	public void pushCall(String funcName, LuaValue arg0, LuaValue arg1, LuaValue arg2) {
-		LuaValue func = getVar(funcName);
-		if (func != null)
-			new Call(func, LuaValue.varargsOf(arg0, arg1, arg2));
+		new DelayedCall(funcName, LuaValue.varargsOf(arg0, arg1, arg2));
+	}
+	private LuaValue safeCall(String funcName, Varargs args) {
+		Varargs ret = null;
+		try {
+//			LuaLoader.printTable(self.getmetatable().tojstring(), self.getmetatable());
+//			System.out.println(self.get("class").get("onBirth"));
+//			LuaLoader.printTable(LuaLoader.emt.tojstring(), LuaLoader.emt);
+			ret = self.invokemethod(funcName, args);
+		} catch (LuaError e) {
+			Engine.err.printf("Syntax error in file '%s' in function %s:\n\t%s\n",
+					self.get("class").get("path"), funcName, e.getMessage());
+		}
+		if (ret == null)
+			return LuaValue.NIL;
+		return ret.arg1();
 	}
 	
-	private final class Call {
-		private LuaValue func;
+	private final class DelayedCall {
+		private String funcName;
 		private Varargs args;
 		
-		public Call (LuaValue func, Varargs args) {
-			this.func = func;
+		public DelayedCall (String funcName, Varargs args) {
+			this.funcName = funcName;
 			this.args = args;
 			callQueue.add(this);
 		}
 		
 		public void execute() {
-			func.invoke(args);
+			safeCall(funcName, args);
 		}
 	}
 }

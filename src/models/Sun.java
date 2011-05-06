@@ -13,7 +13,7 @@ public class Sun {
 	private float pitch;
 	private float yaw;
 	public Sun() {
-		vbo = ModelLoader.loadStatic("sphere");
+		vbo = ModelLoader.loadStatic("Sphere");
 	}
 	public void render() {
 		pitch = 50f;

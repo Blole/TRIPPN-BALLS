@@ -1,4 +1,4 @@
-print(class.path.." loading")
+
 function class:onCollide()
 	print("default.lua collision")
 end

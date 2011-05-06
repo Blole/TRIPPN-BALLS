@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLEventListener;
@@ -24,6 +23,10 @@ import structures.VBOinfo;
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opengl.util.FPSAnimator;
 
+/**
+ * A class who everybody can access directly and make it draw a vbo, or
+ * get the OpenGL variable gl and draw a triangle or whatever.
+ */
 public final class Engine implements GLEventListener {
 	private static final long serialVersionUID = 1L;
 	private static boolean fullscreen=false;
@@ -39,12 +42,12 @@ public final class Engine implements GLEventListener {
 	public static final PrintStream err = System.err;
 	
 	public static Map<String, TimeThing> times = new HashMap<String, TimeThing>();
-	public static Stopwatch renderingTime = new Stopwatch();
-	private static float angle;
 
     public static void main(String[] args) {
+		Settings.loadSettings();
     	LuaLoader.init();
 		Input.init();
+		Camera.init();
     	new Engine();
 	}
     
@@ -89,7 +92,6 @@ public final class Engine implements GLEventListener {
 		
 		float mat_specular[] = { 1, 1, 1, 1 };
 	    float mat_shininess[] = { 30 };
-	    float light_position[] = { 20, 20, 20, 0 };
 	    gl.glMaterialfv(GL2.GL_FRONT, GL2.GL_SPECULAR, mat_specular, 0);
 	    gl.glMaterialfv(GL2.GL_FRONT, GL2.GL_SHININESS, mat_shininess, 0);
 	    gl.glMaterialfv(GL2.GL_FRONT, GL2.GL_SHININESS, mat_shininess, 0);

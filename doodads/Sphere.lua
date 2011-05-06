@@ -1,4 +1,4 @@
-print(class.path.." loading")
+
 class.angle = 0
 
 function class:onBirth()

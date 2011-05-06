@@ -69,7 +69,6 @@ public class Settings {
 			down		= loadKeyBind("down");
 			menu		= loadKeyBind("menu");
 			mouseSense	= settingsIni.get(mouseSection, "mouseSense", float.class);
-			System.out.println(settingsIni.get(cameraSection, "mouseSense", float.class));
 			zoomStep	= settingsIni.get(cameraSection, "zoomStep", float.class);
 			zoomInit	= settingsIni.get(cameraSection, "zoomInit", float.class);
 			zoomMin		= settingsIni.get(cameraSection, "zoomMin", float.class);

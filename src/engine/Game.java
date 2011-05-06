@@ -4,8 +4,6 @@ import java.awt.event.KeyEvent;
 
 import javax.media.opengl.GL2;
 
-import org.luaj.vm2.LuaValue;
-
 import collision.Collision;
 
 import models.Sun;
@@ -14,7 +12,6 @@ import models.WorldMesh;
 import structures.Doodad;
 import structures.Entity;
 import structures.Vector;
-
 
 public final class Game {
 	private static final Vector groundGravity = new Vector(0,-0.02f,0);
@@ -35,7 +32,7 @@ public final class Game {
 		worldMesh.loadHeightMap(Settings.worldMap);
 		sun = new Sun();
 		
-		me = new Entity("sphere", false);
+		me = new Entity("Sphere");
 		Camera.init();
 		Camera.setTarget(me.pos);
 	}
@@ -46,6 +43,7 @@ public final class Game {
 		groundGravity();
 		gravity();
 		groundCollision();
+
 		render();
 		Doodad.executeQueue();
 	}
@@ -73,13 +71,13 @@ public final class Game {
 		Engine.phase("gravity",true);
 		for (Entity entityWithGravity : Entity.hasGravity) {
 			boolean resetIfOriginallyFrozen = entityWithGravity.isFrozen();
-			entityWithGravity.setFreeze(true);
+			entityWithGravity.setFrozen(true);
 			for (Entity other : Entity.all) {
 				if (!other.isFrozen()) {
 					entityWithGravity.attract(other);
 				}
 			}
-			entityWithGravity.setFreeze(resetIfOriginallyFrozen);
+			entityWithGravity.setFrozen(resetIfOriginallyFrozen);
 		}
 		Engine.phase("gravity",false);
 	}
@@ -104,8 +102,10 @@ public final class Game {
 				entity.pos.y = 0;
 				if (Math.abs(entity.speed.y) < 0.1f)
 					entity.speed.y = 0;
-				else
+				else {
 					entity.speed.y *= -0.5f;
+					entity.doodad.pushCall("onGroundCollide");
+				}
 			}
 		}
 		Engine.phase("groundCollision",false);
@@ -180,7 +180,7 @@ public final class Game {
 		Engine.gl.glEnd();
 	}
 	private static void parseInput() {
-		float change = 10000000000f;
+		float change = 0.1f;
 		if (Input.keyTyped(KeyEvent.VK_T)) {
 			if (Camera.getMode() == Camera.Mode.TARGET)
 				Camera.setMode(Camera.Mode.FREELOOK);
@@ -226,10 +226,8 @@ public final class Game {
 			
 			break;
 		}
-		if (Input.keyDown(KeyEvent.VK_CONTROL)){
-			
+		if (Input.keyDown(KeyEvent.VK_CONTROL))
 			me.speed.set(0,0,0);
-		}
 		if (Input.keyTyped(KeyEvent.VK_I))
 			System.out.println("me.speed:"+me.speed+"    me.pos:"+me.pos+"   camera.pos:"+Camera.pos);
 		if (Input.keyPressed(KeyEvent.VK_B))
@@ -243,12 +241,10 @@ public final class Game {
 		if (Input.keyTyped(KeyEvent.VK_H)) {
 			drawAxes = !drawAxes;
 		}
-		if (Input.keyTyped(KeyEvent.VK_N)) {
-			new Entity("sphere", false).pos.set(me.pos.x, me.pos.y, me.pos.z-2.5f);
-		}
-		if (Input.keyTyped(KeyEvent.VK_M)) {
-			new Entity("sphere", false).setOwnGravity(true).pos.set(me.pos.x, me.pos.y, me.pos.z-10);
-		}
+		if (Input.keyTyped(KeyEvent.VK_N))
+			new Entity("Sphere").pos.set(me.pos.x, me.pos.y, me.pos.z-2.5f);
+		if (Input.keyTyped(KeyEvent.VK_M))
+			new Entity("sphere").setOwnGravity(true).pos.set(me.pos.x, me.pos.y, me.pos.z-10);
 		if (Input.keyTyped(KeyEvent.VK_R)) {
 			Entity.hasGravity.clear();
 			Entity.all.clear();
@@ -257,7 +253,7 @@ public final class Game {
 			me.pos.set(0,0,0);
 		}
 		if (Input.keyTyped(KeyEvent.VK_F))
-			me.setFreeze(!me.isFrozen());
+			me.setFrozen(!me.isFrozen());
 		if (Input.keyTyped(KeyEvent.VK_UP)) {
 			Camera.setFOV(Camera.getFOV()+3);
 			System.out.printf("FOV set to: %3.0f degrees\n", Camera.getFOV());
@@ -293,11 +289,11 @@ public final class Game {
 	private static void pauseGame(boolean pause) {
 		if (pause) {
 			for (Entity entity : Entity.all)
-				entity.setFreeze(true);
+				entity.setFrozen(true);
 		}
 		else {
 			for (Entity entity : Entity.all)
-				entity.setFreeze(false);
+				entity.setFrozen(false);
 		}
 	}
 	public static void reshape(int x, int y, int width, int height) {
